@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import HomePage from './pages/HomePage';
 import VideosPage from './pages/VideosPage';
@@ -15,9 +14,7 @@ import Footer from './components/Footer';
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <MainApp />
-      </Router>
+      <MainApp />
     </AuthProvider>
   );
 };
