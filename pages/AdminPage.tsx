@@ -10,6 +10,7 @@ const AdminPage: React.FC = () => {
     const initialFormState: Video = { id: '', title: '', description: '', transcript: '' };
     const [formState, setFormState] = useState<Video>(initialFormState);
     const [isEditing, setIsEditing] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -27,19 +28,20 @@ const AdminPage: React.FC = () => {
         setFormState(initialFormState);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         let success = false;
         if (isEditing) {
             success = updateVideo(formState.id, formState);
             if (success) alert("Video updated successfully!");
         } else {
-            success = addVideo(formState);
-            if (success) alert("Video added successfully!");
+            success = await addVideo(formState);
         }
         if (success) {
             resetForm();
         }
+        setIsSubmitting(false);
     };
 
     return (
@@ -72,15 +74,11 @@ const AdminPage: React.FC = () => {
                             <input type="text" name="title" id="title" value={formState.title} onChange={handleInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" required />
                         </div>
                         <div>
-                            <label htmlFor="description" className="block font-roboto font-bold mb-1">Description</label>
-                            <textarea name="description" id="description" value={formState.description} onChange={handleInputChange} rows={3} className="w-full p-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"></textarea>
-                        </div>
-                        <div>
                             <label htmlFor="transcript" className="block font-roboto font-bold mb-1">Transcript</label>
                             <textarea name="transcript" id="transcript" value={formState.transcript} onChange={handleInputChange} rows={8} className="w-full p-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" required></textarea>
                         </div>
-                        <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300">
-                           {isEditing ? 'Save Changes' : 'Add Video'}
+                        <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300 disabled:bg-gray-500" disabled={isSubmitting}>
+                           {isSubmitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Add Video')}
                         </button>
                     </form>
                 </div>

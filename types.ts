@@ -17,6 +17,7 @@ export interface Video {
   title: string;
   description: string;
   transcript: string;
+  faqs?: FAQItem[]; // Generated FAQs are now stored with the video
 }
 
 export interface FAQItem {

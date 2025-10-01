@@ -7,33 +7,32 @@ import Chatbot from '../components/Chatbot';
 import KeyMoments from '../components/KeyMoments';
 
 const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
-    const { videos } = useVideoData();
+    const { videos, updateVideo } = useVideoData();
     const [video, setVideo] = useState<Video | null>(null);
     const [activeTab, setActiveTab] = useState<'summary' | 'moments' | 'transcript' | 'chat'>('summary');
-    const [faqs, setFaqs] = useState<FAQItem[]>([]);
     const [keyMoments, setKeyMoments] = useState<KeyMoment[]>([]);
     const [formattedDescription, setFormattedDescription] = useState<string>('');
     const [isLoadingInsights, setIsLoadingInsights] = useState<boolean>(true);
+    const [isGeneratingMoreFaqs, setIsGeneratingMoreFaqs] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
     const playerRef = useRef<any>(null);
-    const videoData = videos.find(v => v.id === videoId);
+    
+    // Find video data from the hook's state
+    const videoDataFromHook = videos.find(v => v.id === videoId);
 
     const generateAiInsights = useCallback(async (title: string, description: string, transcript: string) => {
         setIsLoadingInsights(true);
         setError(null);
         setFormattedDescription('');
         try {
-            const prompt = `Based on the provided title, description, and transcript of a YouTube video, perform three tasks:
+            const prompt = `Based on the provided title, description, and transcript of a YouTube video, perform two tasks:
 
-1.  **Generate Detailed FAQs:** Create a list of 3-5 frequently asked questions (FAQs) based on the video's content. For each question, provide a detailed and comprehensive answer, drawing specific examples or steps directly from the transcript to ensure the answer is thorough and easy to understand.
+1.  **Identify Key Moments:** Identify key moments from the transcript. Extract the timestamp (e.g., "(0:25)") and provide a brief, one-sentence summary of what is discussed at that point.
 
-2.  **Identify Key Moments:** Identify key moments from the transcript. Extract the timestamp (e.g., "(0:25)") and provide a brief, one-sentence summary of what is discussed at that point.
+2.  **Format Video Description:** Create a clean, well-formatted "About this video" summary from the original video description. Remove all promotional links, social media handles, timestamps, and irrelevant marketing text. Structure the summary into clear, readable paragraphs.
 
-3.  **Format Video Description:** Create a clean, well-formatted "About this video" summary from the original video description. Remove all promotional links, social media handles, timestamps, and irrelevant marketing text. Structure the summary into clear, readable paragraphs.
-
-Return the result as a single, valid JSON object with three keys: "faqs", "keyMoments", and "description".
--   "faqs" should be an array of objects, where each object has "question" and "answer" string keys.
+Return the result as a single, valid JSON object with two keys: "keyMoments" and "description".
 -   "keyMoments" should be an array of objects, where each object has "timestamp" and "summary" string keys.
 -   "description" should be a single string containing the newly formatted, clean description.
 
@@ -84,7 +83,6 @@ ${transcript}
 
             if (extractedJsonStr) {
                 const json = JSON.parse(extractedJsonStr);
-                setFaqs(json.faqs || []);
                 setKeyMoments(json.keyMoments || []);
                 setFormattedDescription(json.description || '');
             } else {
@@ -99,28 +97,102 @@ ${transcript}
         }
     }, []);
 
+    const handleGenerateMoreFaqs = async () => {
+        if (!video) return;
+        setIsGeneratingMoreFaqs(true);
+        setError(null);
+
+        const existingQuestions = (video.faqs || []).map(faq => `- ${faq.question}`).join('\n');
+
+        try {
+             const prompt = `You are an AI assistant for a YouTube video. Your task is to generate 3 new FAQs based on the video's transcript. These new questions must be different from the ones already provided. Your knowledge is strictly limited to the video transcript.
+
+Video Title: "${video.title}"
+
+Existing Questions to avoid:
+${existingQuestions}
+
+Transcript:
+---
+${video.transcript}
+---
+
+Generate 3 new and unique FAQs. Return the result as a single, valid JSON array of objects, where each object has "question" and "answer" string keys. Do not include any introductory text or markdown formatting.`;
+            
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                 headers: {
+                    'Authorization': `Bearer ${process.env.API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': `https://techiral.com`, 
+                    'X-Title': `Techiral AI`,
+                },
+                body: JSON.stringify({
+                    model: 'x-ai/grok-4-fast:free',
+                    messages: [
+                        { role: 'user', content: prompt }
+                    ]
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to generate more FAQs.');
+
+            const data = await response.json();
+            const jsonContent = data.choices[0].message.content;
+
+            const extractJsonArrayString = (str: string): string | null => {
+                const match = str.match(/\[[\s\S]*\]/);
+                return match ? match[0] : null;
+            };
+            
+            const extractedJsonStr = extractJsonArrayString(jsonContent);
+            if (!extractedJsonStr) throw new Error('Invalid JSON response for new FAQs.');
+
+            const newFaqs: FAQItem[] = JSON.parse(extractedJsonStr);
+
+            const existingFaqSet = new Set((video.faqs || []).map(f => f.question));
+            const uniqueNewFaqs = newFaqs.filter(faq => !existingFaqSet.has(faq.question));
+
+            if (uniqueNewFaqs.length > 0) {
+                const updatedFaqs = [...(video.faqs || []), ...uniqueNewFaqs];
+                const updatedVideo = { ...video, faqs: updatedFaqs };
+                setVideo(updatedVideo); // Update local state immediately
+                updateVideo(video.id, updatedVideo); // Persist to storage
+            }
+
+        } catch (e) {
+            console.error("Error generating more FAQs:", e);
+            setError("Sorry, could not generate more FAQs at this time.");
+        } finally {
+            setIsGeneratingMoreFaqs(false);
+        }
+    };
+
+
     useEffect(() => {
-        if (videoData) {
-            setVideo(videoData);
-            // Don't call generate insights if we already have them for this video
-            if (videoData.id !== video?.id) {
-                generateAiInsights(videoData.title, videoData.description, videoData.transcript);
+        if (videoDataFromHook) {
+             // Deep comparison to prevent re-renders if the object reference changes but content is the same
+            if (JSON.stringify(videoDataFromHook) !== JSON.stringify(video)) {
+                setVideo(videoDataFromHook);
+                // Only generate insights if the video ID changes
+                if (videoDataFromHook.id !== video?.id) {
+                    generateAiInsights(videoDataFromHook.title, videoDataFromHook.description, videoDataFromHook.transcript);
+                }
             }
         } else {
             if (videos.length > 0) {
                 setError('Video not found. It may have been deleted.');
             }
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [videos.length, videoId, video?.id, generateAiInsights, JSON.stringify(videoData)]);
+    }, [videos.length, videoId, video?.id, generateAiInsights, videoDataFromHook, video]);
 
     useEffect(() => {
-        if (!videoData) return;
+        if (!videoDataFromHook) return;
 
         const createPlayer = () => {
             if (document.getElementById('yt-player-container') && !playerRef.current) {
                 playerRef.current = new (window as any).YT.Player('yt-player-container', {
-                    videoId: videoData.id,
+                    videoId: videoDataFromHook.id,
                     width: '100%',
                     height: '100%',
                 });
@@ -144,7 +216,7 @@ ${transcript}
                 playerRef.current = null;
             }
         };
-    }, [videoData]);
+    }, [videoDataFromHook]);
 
     const handleSeekTo = useCallback((timestamp: string) => {
         if (!playerRef.current || typeof playerRef.current.seekTo !== 'function') return;
@@ -182,7 +254,7 @@ ${transcript}
     );
 
     if (!video && !error) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
-    if (error) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold p-8">{error}</div>;
+    if (error && !video) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold p-8">{error}</div>;
 
     return (
         <div className="bg-white text-black py-16 md:py-24 px-6">
@@ -197,7 +269,7 @@ ${transcript}
 
                 <div className="mb-12">
                     <h2 className="font-montserrat text-2xl font-black mb-3">About this video</h2>
-                    {isLoadingInsights ? (
+                    {isLoadingInsights && !formattedDescription ? (
                          <div className="space-y-2">
                             <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
                             <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse"></div>
@@ -226,10 +298,23 @@ ${transcript}
                        <TabButton tabName="chat">Chat</TabButton>
                     </div>
                     <div className="bg-gray-50 p-6 rounded-lg min-h-[400px]">
-                        {isLoadingInsights ? <LoadingSpinner /> : (
+                        {isLoadingInsights && (!keyMoments.length && !video?.faqs?.length) ? <LoadingSpinner /> : (
                             <>
-                                {error && <p className="text-red-500">{error}</p>}
-                                {activeTab === 'summary' && <FAQ faqs={faqs} />}
+                                {error && <p className="text-red-500 mb-4">{error}</p>}
+                                {activeTab === 'summary' && (
+                                    <>
+                                        <FAQ faqs={video?.faqs || []} />
+                                        <div className="text-center mt-6">
+                                            <button
+                                                onClick={handleGenerateMoreFaqs}
+                                                disabled={isGeneratingMoreFaqs}
+                                                className="bg-black text-white font-roboto font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                            >
+                                                {isGeneratingMoreFaqs ? 'Generating...' : 'Generate More FAQs'}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                                 {activeTab === 'moments' && <KeyMoments moments={keyMoments} onTimestampClick={handleSeekTo} />}
                                 {activeTab === 'transcript' && (
                                     <div className="font-mono text-sm text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
