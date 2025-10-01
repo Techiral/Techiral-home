@@ -1,13 +1,18 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom'; // Import Link
 import { useVideoData } from '../hooks/useVideoData';
 import type { Video } from '../types';
 
 const VideoCard: React.FC<{ video: Video }> = ({ video }) => {
   return (
-    <a href={`#/videos/${video.id}`} className="group block p-6 bg-gray-50 hover:bg-white border border-gray-200 hover:shadow-md rounded-lg transition-all duration-300">
+    // Use Link instead of anchor tag
+    <Link 
+      to={`/videos/${video.id}`} 
+      className="group block p-6 bg-gray-50 hover:bg-white border border-gray-200 hover:shadow-md rounded-lg transition-all duration-300"
+    >
         <h3 className="font-montserrat text-xl font-black text-black mb-2 group-hover:text-gray-600">{video.title}</h3>
         <p className="font-roboto text-gray-700 text-sm overflow-hidden line-clamp-2">{video.description}</p>
-    </a>
+    </Link>
   );
 };
 
