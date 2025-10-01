@@ -36,12 +36,12 @@ export const useVideoData = () => {
 
   const addVideo = useCallback((newVideo: Video) => {
     if (!newVideo.id || !newVideo.title || !newVideo.transcript) {
-        console.error("Video ID, Title, and Transcript are required.");
+        alert("Video ID, Title, and Transcript are required.");
         return false;
     }
     const videoExists = videos.some(video => video.id === newVideo.id);
     if (videoExists) {
-        console.error("A video with this ID already exists.");
+        alert("A video with this ID already exists.");
         return false;
     }
     const updatedVideos = [...videos, newVideo];
@@ -52,7 +52,7 @@ export const useVideoData = () => {
   const updateVideo = useCallback((videoId: string, updatedVideoData: Video) => {
     const videoExists = videos.some(video => video.id === videoId);
     if (!videoExists) {
-      console.error("Cannot update a video that doesn't exist.");
+      alert("Cannot update a video that doesn't exist.");
       return false;
     }
     const updatedVideos = videos.map(video =>
