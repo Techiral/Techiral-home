@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { useVideoData } from '../hooks/useVideoData';
 import type { Video, FAQItem } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import FAQ from '../components/FAQ';
 import Chatbot from '../components/Chatbot';
-
-// Initialize the Gemini AI model
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
     const { videos } = useVideoData();
@@ -32,35 +28,22 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
         setIsLoadingFaqs(true);
         setError(null);
         try {
-            const prompt = `Based on the transcript of the YouTube video titled "${title}", generate a list of 3-5 frequently asked questions (FAQs) that the video answers. The questions should be concise and relevant to the video's main topics. The answers should be clear summaries derived directly from the transcript content.`;
-
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `${prompt}\n\nTranscript:\n${transcript}`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            faqs: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        question: { type: Type.STRING },
-                                        answer: { type: Type.STRING },
-                                    },
-                                    required: ['question', 'answer'],
-                                },
-                            },
-                        },
-                        required: ['faqs'],
-                    },
-                },
+            const response = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'faq',
+                    payload: { title, transcript }
+                })
             });
 
-            const json = JSON.parse(response.text);
-            setFaqs(json.faqs || []);
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to generate FAQs from server.');
+            }
+            
+            setFaqs(result.data.faqs || []);
         } catch (e) {
             console.error("Error generating FAQs:", e);
             setError("Sorry, the AI couldn't generate FAQs for this video. Please check the transcript tab.");
