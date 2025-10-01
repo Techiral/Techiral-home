@@ -1,25 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useVideoData } from '../hooks/useVideoData';
-import type { Video, FAQItem } from '../types';
+import type { Video, FAQItem, KeyMoment } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import FAQ from '../components/FAQ';
 import Chatbot from '../components/Chatbot';
+import KeyMoments from '../components/KeyMoments';
 
 const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
     const { videos } = useVideoData();
     const [video, setVideo] = useState<Video | null>(null);
-    const [activeTab, setActiveTab] = useState<'faq' | 'transcript' | 'chat'>('faq');
+    const [activeTab, setActiveTab] = useState<'summary' | 'moments' | 'transcript' | 'chat'>('summary');
     const [faqs, setFaqs] = useState<FAQItem[]>([]);
-    const [isLoadingFaqs, setIsLoadingFaqs] = useState<boolean>(true);
+    const [keyMoments, setKeyMoments] = useState<KeyMoment[]>([]);
+    const [isLoadingInsights, setIsLoadingInsights] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     const videoData = videos.find(v => v.id === videoId);
 
-    const generateFaqs = useCallback(async (title: string, transcript: string) => {
-        setIsLoadingFaqs(true);
+    const generateAiInsights = useCallback(async (title: string, transcript: string) => {
+        setIsLoadingInsights(true);
         setError(null);
         try {
-            const prompt = `Based on the transcript of the YouTube video titled "${title}", generate a list of 3-5 frequently asked questions (FAQs) that the video answers. The questions should be concise and relevant to the video's main topics. The answers should be clear summaries derived directly from the transcript content. Return the result as a JSON object with a single key "faqs" which is an array of objects, where each object has "question" and "answer" keys.`;
+            const prompt = `Based on the transcript of the YouTube video titled "${title}", perform two tasks:
+1. Generate a list of 3-5 frequently asked questions (FAQs) that the video answers. The questions should be concise and relevant. The answers should be clear summaries derived directly from the transcript.
+2. Identify key moments from the transcript. Extract the timestamp (e.g., "(0:25)") and provide a brief, one-sentence summary of what is discussed at that point.
+
+Return the result as a single, valid JSON object with two keys: "faqs" and "keyMoments".
+- "faqs" should be an array of objects, where each object has "question" and "answer" string keys.
+- "keyMoments" should be an array of objects, where each object has "timestamp" and "summary" string keys.`;
 
             const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -46,7 +54,6 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
             const data = await response.json();
             const jsonContent = data.choices[0].message.content;
             
-            // Helper to extract JSON from a string that might be wrapped in markdown or other text
             const extractJsonString = (str: string): string | null => {
                 const match = str.match(/\{[\s\S]*\}/);
                 return match ? match[0] : null;
@@ -57,39 +64,38 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
             if (extractedJsonStr) {
                 const json = JSON.parse(extractedJsonStr);
                 setFaqs(json.faqs || []);
+                setKeyMoments(json.keyMoments || []);
             } else {
                  console.error("Could not extract JSON from AI response:", jsonContent);
                  throw new Error("AI response did not contain valid JSON.");
             }
         } catch (e) {
-            console.error("Error generating FAQs:", e);
-            setError("Sorry, the AI couldn't generate FAQs for this video. Please check the transcript tab.");
+            console.error("Error generating AI insights:", e);
+            setError("Sorry, the AI couldn't generate insights for this video. Please try again later.");
         } finally {
-            setIsLoadingFaqs(false);
+            setIsLoadingInsights(false);
         }
     }, []);
 
     useEffect(() => {
-        // Find the video data from our dynamic hook based on the ID from the URL
         if (videoData) {
             setVideo(videoData);
-            generateFaqs(videoData.title, videoData.transcript);
+            generateAiInsights(videoData.title, videoData.transcript);
         } else {
-            // Only set error if videos have loaded and we still can't find the video.
             if (videos.length > 0) {
                 setError('Video not found. It may have been deleted.');
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [videos.length > 0, generateFaqs, JSON.stringify(videoData)]);
+    }, [videos.length > 0, generateAiInsights, JSON.stringify(videoData)]);
     
-    const TabButton: React.FC<{tabName: 'faq' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
+    const TabButton: React.FC<{tabName: 'summary' | 'moments' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
         <button
             onClick={() => setActiveTab(tabName)}
-            className={`py-2 px-4 font-roboto font-bold rounded-t-lg transition-colors duration-300 ${
+            className={`py-3 px-6 font-roboto font-bold text-sm md:text-base transition-colors duration-300 border-b-4 ${
                 activeTab === tabName
-                    ? 'bg-black text-white'
-                    : 'bg-gray-200 text-black hover:bg-gray-300'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-500 hover:text-black'
             }`}
         >
             {children}
@@ -101,45 +107,58 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
 
     return (
         <div className="bg-white text-black py-16 md:py-24 px-6">
-            <div className="container mx-auto">
+            <div className="container mx-auto max-w-4xl">
                 <div className="text-center mb-8">
                      <h1 className="font-montserrat text-3xl md:text-5xl font-black">{video?.title}</h1>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-                    <div className="lg:col-span-2">
-                         {/* YouTube Player */}
-                        <div className="aspect-w-16 aspect-h-9 mb-6 shadow-2xl rounded-lg overflow-hidden">
-                            <iframe
-                                src={`https://www.youtube.com/embed/${video?.id}`}
-                                title={video?.title}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="w-full h-full"
-                            ></iframe>
-                        </div>
-                        <h2 className="font-montserrat text-2xl font-black mb-3">About this video</h2>
-                        <p className="font-roboto text-gray-700 leading-relaxed">{video?.description}</p>
-                    </div>
+                <div className="aspect-w-16 aspect-h-9 mb-8 shadow-2xl rounded-lg overflow-hidden">
+                    <iframe
+                        src={`https://www.youtube.com/embed/${video?.id}`}
+                        title={video?.title}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                    ></iframe>
+                </div>
 
-                    <div className="lg:col-span-1">
-                        <div className="flex border-b-2 border-black">
-                           <TabButton tabName="faq">AI-Generated FAQ</TabButton>
-                           <TabButton tabName="transcript">Transcript</TabButton>
-                           <TabButton tabName="chat">Chat</TabButton>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-b-lg h-[60vh] overflow-y-auto">
-                            {activeTab === 'faq' && (
-                                isLoadingFaqs ? <LoadingSpinner /> : (error ? <p className="text-red-500">{error}</p> : <FAQ faqs={faqs} />)
-                            )}
-                            {activeTab === 'transcript' && (
-                                <div className="font-mono text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
-                                    {video?.transcript}
-                                </div>
-                            )}
-                            {activeTab === 'chat' && <Chatbot video={video} />}
-                        </div>
+                <div className="mb-12">
+                    <h2 className="font-montserrat text-2xl font-black mb-3">About this video</h2>
+                    <p className="font-roboto text-gray-700 leading-relaxed">{video?.description}</p>
+                </div>
+                
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center mb-12">
+                    <h3 className="font-montserrat text-2xl font-black mb-4">Ready for the Next Step?</h3>
+                    <p className="font-roboto text-gray-700 mb-6 max-w-2xl mx-auto">
+                        If you found this helpful, join our community of creators and developers to keep the conversation going.
+                    </p>
+                    <a href="#connect" className="bg-black text-white font-roboto font-bold py-3 px-8 rounded-full hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 inline-block">
+                        Join The Community
+                    </a>
+                </div>
+
+                <div>
+                    <div className="flex justify-center border-b-2 border-gray-200 mb-6">
+                       <TabButton tabName="summary">AI Summary</TabButton>
+                       <TabButton tabName="moments">Key Moments</TabButton>
+                       <TabButton tabName="transcript">Transcript</TabButton>
+                       <TabButton tabName="chat">Chat</TabButton>
+                    </div>
+                    <div className="bg-gray-50 p-6 rounded-lg min-h-[400px]">
+                        {isLoadingInsights ? <LoadingSpinner /> : (
+                            <>
+                                {error && <p className="text-red-500">{error}</p>}
+                                {activeTab === 'summary' && <FAQ faqs={faqs} />}
+                                {activeTab === 'moments' && <KeyMoments moments={keyMoments} />}
+                                {activeTab === 'transcript' && (
+                                    <div className="font-mono text-sm text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
+                                        {video?.transcript}
+                                    </div>
+                                )}
+                                {activeTab === 'chat' && <Chatbot video={video} />}
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

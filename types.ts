@@ -24,6 +24,11 @@ export interface FAQItem {
   answer: string;
 }
 
+export interface KeyMoment {
+  timestamp: string;
+  summary: string;
+}
+
 export interface ChatMessage {
     role: 'user' | 'model';
     text: string;
