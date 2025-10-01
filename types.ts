@@ -17,7 +17,6 @@ export interface Video {
   title: string;
   description: string;
   transcript: string;
-  faqs?: FAQItem[];
 }
 
 export interface FAQItem {

@@ -1,30 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useVideoData } from '../hooks/useVideoData';
 import { useAuth } from '../hooks/useAuth';
 import type { Video } from '../types';
-
-interface Feedback {
-    type: 'success' | 'error';
-    message: string;
-}
 
 const AdminPage: React.FC = () => {
     const { videos, addVideo, updateVideo, deleteVideo } = useVideoData();
     const { logout } = useAuth();
 
-    const initialFormState: Video = { id: '', title: '', description: '', transcript: '', faqs: [] };
+    const initialFormState: Video = { id: '', title: '', description: '', transcript: '' };
     const [formState, setFormState] = useState<Video>(initialFormState);
     const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [feedback, setFeedback] = useState<Feedback | null>(null);
-
-    // Clear feedback message after a few seconds
-    useEffect(() => {
-        if (feedback) {
-            const timer = setTimeout(() => setFeedback(null), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [feedback]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -34,7 +19,6 @@ const AdminPage: React.FC = () => {
     const handleEditClick = (video: Video) => {
         setIsEditing(true);
         setFormState(video);
-        setFeedback(null); // Clear feedback when starting to edit
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
     
@@ -43,49 +27,18 @@ const AdminPage: React.FC = () => {
         setFormState(initialFormState);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSaving(true);
-        setFeedback(null);
-
-        try {
-            // Step 1: Generate FAQs from the server
-            const response = await fetch('/api/gemini', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'faq',
-                    payload: { title: formState.title, transcript: formState.transcript }
-                })
-            });
-
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to generate FAQs from server.');
-            }
-
-            const faqs = result.data.faqs || [];
-            const videoWithFaqs = { ...formState, faqs };
-
-            // Step 2: Save the complete video object
-            let success = false;
-            if (isEditing) {
-                success = updateVideo(videoWithFaqs.id, videoWithFaqs);
-                if (success) setFeedback({ type: 'success', message: 'Video updated successfully!' });
-            } else {
-                success = addVideo(videoWithFaqs);
-                if (success) setFeedback({ type: 'success', message: 'Video added successfully!' });
-            }
-
-            if (success) {
-                resetForm();
-            }
-        } catch (error) {
-            console.error("Error saving video:", error);
-            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-            setFeedback({ type: 'error', message: `Failed to save video: ${errorMessage}` });
-        } finally {
-            setIsSaving(false);
+        let success = false;
+        if (isEditing) {
+            success = updateVideo(formState.id, formState);
+            if (success) alert("Video updated successfully!");
+        } else {
+            success = addVideo(formState);
+            if (success) alert("Video added successfully!");
+        }
+        if (success) {
+            resetForm();
         }
     };
 
@@ -110,11 +63,6 @@ const AdminPage: React.FC = () => {
                         )}
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {feedback && (
-                            <div className={`p-3 rounded-md text-sm font-bold ${feedback.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                {feedback.message}
-                            </div>
-                        )}
                         <div>
                             <label htmlFor="id" className="block font-roboto font-bold mb-1">YouTube Video ID</label>
                             <input type="text" name="id" id="id" value={formState.id} onChange={handleInputChange} placeholder="e.g., 72KcZewI0Ns" className="w-full p-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" required disabled={isEditing} />
@@ -131,8 +79,8 @@ const AdminPage: React.FC = () => {
                             <label htmlFor="transcript" className="block font-roboto font-bold mb-1">Transcript</label>
                             <textarea name="transcript" id="transcript" value={formState.transcript} onChange={handleInputChange} rows={8} className="w-full p-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" required></textarea>
                         </div>
-                        <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={isSaving}>
-                           {isSaving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Add Video')}
+                        <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300">
+                           {isEditing ? 'Save Changes' : 'Add Video'}
                         </button>
                     </form>
                 </div>
