@@ -23,18 +23,18 @@ const AdminPage: React.FC = () => {
         value: string,
         arrayName: 'faqs' | 'keyMoments'
     ) => {
-        const newArray = [...formState[arrayName]] as T[];
+        const newArray = [...(formState[arrayName] || [])] as T[];
         newArray[index] = { ...newArray[index], [field]: value };
         setFormState(prev => ({ ...prev, [arrayName]: newArray }));
     };
     
     const handleAddItem = (arrayName: 'faqs' | 'keyMoments') => {
         const newItem = arrayName === 'faqs' ? { question: '', answer: '' } : { timestamp: '', summary: '' };
-        setFormState(prev => ({ ...prev, [arrayName]: [...prev[arrayName], newItem] }));
+        setFormState(prev => ({ ...prev, [arrayName]: [...(prev[arrayName] || []), newItem] }));
     };
 
     const handleRemoveItem = (index: number, arrayName: 'faqs' | 'keyMoments') => {
-        const newArray = formState[arrayName].filter((_, i) => i !== index);
+        const newArray = (formState[arrayName] || []).filter((_, i) => i !== index);
         setFormState(prev => ({ ...prev, [arrayName]: newArray }));
     };
 
@@ -54,7 +54,13 @@ const AdminPage: React.FC = () => {
         setIsSubmitting(true);
         let success = false;
         if (isEditing) {
-            success = updateVideo(formState.id, formState);
+            // Ensure arrays exist before saving to prevent persisting undefined
+            const videoToUpdate = {
+                ...formState,
+                faqs: formState.faqs || [],
+                keyMoments: formState.keyMoments || [],
+            };
+            success = updateVideo(videoToUpdate.id, videoToUpdate);
             if (success) alert("Video updated successfully!");
         } else {
             const { id, title, transcript } = formState;
@@ -124,7 +130,7 @@ const AdminPage: React.FC = () => {
                                 {/* FAQs Editor */}
                                 <div className="space-y-4 pt-4 border-t-2 border-gray-200">
                                     <h3 className="font-montserrat text-xl font-black">Edit FAQs</h3>
-                                    {formState.faqs.map((faq, index) => (
+                                    {(formState.faqs || []).map((faq, index) => (
                                         <div key={index} className="p-4 bg-white border border-gray-300 rounded-md space-y-2 relative">
                                             <button type="button" onClick={() => handleRemoveItem(index, 'faqs')} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
                                             <input type="text" placeholder="Question" value={faq.question} onChange={e => handleNestedChange<FAQItem>(index, 'question', e.target.value, 'faqs')} className="w-full p-2 border border-gray-300 rounded-md" />
@@ -137,7 +143,7 @@ const AdminPage: React.FC = () => {
                                  {/* Key Moments Editor */}
                                 <div className="space-y-4 pt-4 border-t-2 border-gray-200">
                                     <h3 className="font-montserrat text-xl font-black">Edit Key Moments</h3>
-                                    {formState.keyMoments.map((moment, index) => (
+                                    {(formState.keyMoments || []).map((moment, index) => (
                                         <div key={index} className="p-4 bg-white border border-gray-300 rounded-md space-y-2 relative">
                                              <button type="button" onClick={() => handleRemoveItem(index, 'keyMoments')} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
                                             <input type="text" placeholder="Timestamp (e.g., 1:40)" value={moment.timestamp} onChange={e => handleNestedChange<KeyMoment>(index, 'timestamp', e.target.value, 'keyMoments')} className="w-full p-2 border border-gray-300 rounded-md" />
