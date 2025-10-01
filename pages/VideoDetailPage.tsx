@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useVideoData } from '../hooks/useVideoData';
 import type { Video, FAQItem, KeyMoment } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -12,22 +12,43 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
     const [activeTab, setActiveTab] = useState<'summary' | 'moments' | 'transcript' | 'chat'>('summary');
     const [faqs, setFaqs] = useState<FAQItem[]>([]);
     const [keyMoments, setKeyMoments] = useState<KeyMoment[]>([]);
+    const [formattedDescription, setFormattedDescription] = useState<string>('');
     const [isLoadingInsights, setIsLoadingInsights] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    const playerRef = useRef<any>(null);
     const videoData = videos.find(v => v.id === videoId);
 
-    const generateAiInsights = useCallback(async (title: string, transcript: string) => {
+    const generateAiInsights = useCallback(async (title: string, description: string, transcript: string) => {
         setIsLoadingInsights(true);
         setError(null);
+        setFormattedDescription('');
         try {
-            const prompt = `Based on the transcript of the YouTube video titled "${title}", perform two tasks:
-1. Generate a list of 3-5 frequently asked questions (FAQs) that the video answers. The questions should be concise and relevant. The answers should be clear summaries derived directly from the transcript.
-2. Identify key moments from the transcript. Extract the timestamp (e.g., "(0:25)") and provide a brief, one-sentence summary of what is discussed at that point.
+            const prompt = `Based on the provided title, description, and transcript of a YouTube video, perform three tasks:
 
-Return the result as a single, valid JSON object with two keys: "faqs" and "keyMoments".
-- "faqs" should be an array of objects, where each object has "question" and "answer" string keys.
-- "keyMoments" should be an array of objects, where each object has "timestamp" and "summary" string keys.`;
+1.  **Generate Detailed FAQs:** Create a list of 3-5 frequently asked questions (FAQs) based on the video's content. For each question, provide a detailed and comprehensive answer, drawing specific examples or steps directly from the transcript to ensure the answer is thorough and easy to understand.
+
+2.  **Identify Key Moments:** Identify key moments from the transcript. Extract the timestamp (e.g., "(0:25)") and provide a brief, one-sentence summary of what is discussed at that point.
+
+3.  **Format Video Description:** Create a clean, well-formatted "About this video" summary from the original video description. Remove all promotional links, social media handles, timestamps, and irrelevant marketing text. Structure the summary into clear, readable paragraphs.
+
+Return the result as a single, valid JSON object with three keys: "faqs", "keyMoments", and "description".
+-   "faqs" should be an array of objects, where each object has "question" and "answer" string keys.
+-   "keyMoments" should be an array of objects, where each object has "timestamp" and "summary" string keys.
+-   "description" should be a single string containing the newly formatted, clean description.
+
+Video Title: "${title}"
+
+Original Description:
+---
+${description}
+---
+
+Transcript:
+---
+${transcript}
+---
+`;
 
             const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -40,7 +61,7 @@ Return the result as a single, valid JSON object with two keys: "faqs" and "keyM
                 body: JSON.stringify({
                     model: 'x-ai/grok-4-fast:free',
                     messages: [
-                        { role: 'user', content: `${prompt}\n\nTranscript:\n${transcript}` }
+                        { role: 'user', content: prompt }
                     ]
                 })
             });
@@ -65,6 +86,7 @@ Return the result as a single, valid JSON object with two keys: "faqs" and "keyM
                 const json = JSON.parse(extractedJsonStr);
                 setFaqs(json.faqs || []);
                 setKeyMoments(json.keyMoments || []);
+                setFormattedDescription(json.description || '');
             } else {
                  console.error("Could not extract JSON from AI response:", jsonContent);
                  throw new Error("AI response did not contain valid JSON.");
@@ -80,15 +102,72 @@ Return the result as a single, valid JSON object with two keys: "faqs" and "keyM
     useEffect(() => {
         if (videoData) {
             setVideo(videoData);
-            generateAiInsights(videoData.title, videoData.transcript);
+            // Don't call generate insights if we already have them for this video
+            if (videoData.id !== video?.id) {
+                generateAiInsights(videoData.title, videoData.description, videoData.transcript);
+            }
         } else {
             if (videos.length > 0) {
                 setError('Video not found. It may have been deleted.');
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [videos.length > 0, generateAiInsights, JSON.stringify(videoData)]);
-    
+    }, [videos.length, videoId, video?.id, generateAiInsights, JSON.stringify(videoData)]);
+
+    useEffect(() => {
+        if (!videoData) return;
+
+        const createPlayer = () => {
+            if (document.getElementById('yt-player-container') && !playerRef.current) {
+                playerRef.current = new (window as any).YT.Player('yt-player-container', {
+                    videoId: videoData.id,
+                    width: '100%',
+                    height: '100%',
+                });
+            }
+        };
+
+        if (!(window as any).YT || !(window as any).YT.Player) {
+            (window as any).onYouTubeIframeAPIReady = createPlayer;
+            if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+                const tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                document.body.appendChild(tag);
+            }
+        } else {
+            createPlayer();
+        }
+
+        return () => {
+            if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+                playerRef.current.destroy();
+                playerRef.current = null;
+            }
+        };
+    }, [videoData]);
+
+    const handleSeekTo = useCallback((timestamp: string) => {
+        if (!playerRef.current || typeof playerRef.current.seekTo !== 'function') return;
+
+        const timeParts = timestamp.replace(/[()]/g, '').split(':');
+        let totalSeconds = 0;
+
+        if (timeParts.length === 2) { // MM:SS
+            totalSeconds = parseInt(timeParts[0], 10) * 60 + parseInt(timeParts[1], 10);
+        } else if (timeParts.length === 3) { // HH:MM:SS
+            totalSeconds = parseInt(timeParts[0], 10) * 3600 + parseInt(timeParts[1], 10) * 60 + parseInt(timeParts[2], 10);
+        } else {
+            return;
+        }
+
+        if (!isNaN(totalSeconds)) {
+            playerRef.current.seekTo(totalSeconds, true);
+            if (typeof playerRef.current.playVideo === 'function') {
+                playerRef.current.playVideo();
+            }
+        }
+    }, []);
+
     const TabButton: React.FC<{tabName: 'summary' | 'moments' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
         <button
             onClick={() => setActiveTab(tabName)}
@@ -112,20 +191,21 @@ Return the result as a single, valid JSON object with two keys: "faqs" and "keyM
                      <h1 className="font-montserrat text-3xl md:text-5xl font-black">{video?.title}</h1>
                 </div>
 
-                <div className="aspect-w-16 aspect-h-9 mb-8 shadow-2xl rounded-lg overflow-hidden">
-                    <iframe
-                        src={`https://www.youtube.com/embed/${video?.id}`}
-                        title={video?.title}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full"
-                    ></iframe>
+                <div className="aspect-video mb-8 shadow-2xl rounded-lg overflow-hidden bg-black">
+                    <div id="yt-player-container" className="w-full h-full"></div>
                 </div>
 
                 <div className="mb-12">
                     <h2 className="font-montserrat text-2xl font-black mb-3">About this video</h2>
-                    <p className="font-roboto text-gray-700 leading-relaxed">{video?.description}</p>
+                    {isLoadingInsights ? (
+                         <div className="space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                        </div>
+                    ) : (
+                        <p className="font-roboto text-gray-700 leading-relaxed whitespace-pre-wrap">{formattedDescription || video?.description}</p>
+                    )}
                 </div>
                 
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center mb-12">
@@ -150,7 +230,7 @@ Return the result as a single, valid JSON object with two keys: "faqs" and "keyM
                             <>
                                 {error && <p className="text-red-500">{error}</p>}
                                 {activeTab === 'summary' && <FAQ faqs={faqs} />}
-                                {activeTab === 'moments' && <KeyMoments moments={keyMoments} />}
+                                {activeTab === 'moments' && <KeyMoments moments={keyMoments} onTimestampClick={handleSeekTo} />}
                                 {activeTab === 'transcript' && (
                                     <div className="font-mono text-sm text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
                                         {video?.transcript}
