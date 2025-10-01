@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  login: (password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -32,10 +32,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, []);
 
-  const login = async (password: string) => {
-    // Note: Supabase email+password is the standard, but for this specific app's requirement
-    // of a single admin password, we'll use a hardcoded email.
-    const email = 'admin@techiral.com';
+  const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       console.error('Error logging in:', error.message);
