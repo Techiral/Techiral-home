@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { useVideoData } from '../hooks/useVideoData';
 import type { Video, FAQItem } from '../types';
@@ -17,18 +17,9 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
     const [isLoadingFaqs, setIsLoadingFaqs] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        // Find the video data from our dynamic hook based on the ID from the URL
-        const videoData = videos.find(v => v.id === videoId);
-        if (videoData) {
-            setVideo(videoData);
-            generateFaqs(videoData.title, videoData.transcript);
-        } else {
-            setError('Video not found. It may have been deleted.');
-        }
-    }, [videoId, videos]);
+    const videoData = videos.find(v => v.id === videoId);
 
-    const generateFaqs = async (title: string, transcript: string) => {
+    const generateFaqs = useCallback(async (title: string, transcript: string) => {
         setIsLoadingFaqs(true);
         setError(null);
         try {
@@ -67,7 +58,21 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
         } finally {
             setIsLoadingFaqs(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // Find the video data from our dynamic hook based on the ID from the URL
+        if (videoData) {
+            setVideo(videoData);
+            generateFaqs(videoData.title, videoData.transcript);
+        } else {
+            // Only set error if videos have loaded and we still can't find the video.
+            if (videos.length > 0) {
+                setError('Video not found. It may have been deleted.');
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [videos.length, generateFaqs, JSON.stringify(videoData)]);
     
     const TabButton: React.FC<{tabName: 'faq' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
         <button
