@@ -4,6 +4,8 @@ import { useAuth } from './hooks/useAuth';
 import HomePage from './pages/HomePage';
 import VideosPage from './pages/VideosPage';
 import VideoDetailPage from './pages/VideoDetailPage';
+import BlogsPage from './pages/BlogsPage';
+import BlogDetailPage from './pages/BlogDetailPage';
 import AdminPage from './pages/AdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import Header from './components/Header';
@@ -17,6 +19,8 @@ const App: React.FC = () => {
     switch (path) {
       case 'videos':
         return param ? <VideoDetailPage videoId={param} /> : <VideosPage />;
+      case 'blogs':
+        return param ? <BlogDetailPage blogId={param} /> : <BlogsPage />;
       case 'admin':
         // Protected route: show AdminPage if authenticated, otherwise show LoginPage
         return isAuthenticated ? <AdminPage /> : <AdminLoginPage />;

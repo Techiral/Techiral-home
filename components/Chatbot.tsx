@@ -1,8 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Video, ChatMessage } from '../types';
+import type { ChatMessage } from '../types';
 import LoadingSpinner from './LoadingSpinner';
 
-const Chatbot: React.FC<{ video: Video | null }> = ({ video }) => {
+interface ChatbotProps {
+    title: string;
+    content: string;
+    contentType: 'video' | 'article';
+}
+
+const Chatbot: React.FC<ChatbotProps> = ({ title, content, contentType }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -25,18 +31,19 @@ const Chatbot: React.FC<{ video: Video | null }> = ({ video }) => {
         setIsLoading(true);
 
         try {
-            const systemInstruction = `You are "Techiral AI," an expert assistant for the YouTube channel "Techiral." You are answering questions about a specific video. Your tone is friendly, encouraging, and supportive, like a helpful mentor.
+            const contentSource = contentType === 'video' ? 'transcript' : 'article content';
+            const systemInstruction = `You are "Techiral AI," an expert assistant for the YouTube channel "Techiral." You are answering questions about a specific ${contentType}. Your tone is friendly, encouraging, and supportive, like a helpful mentor.
 
-Your knowledge is strictly limited to the information provided in the video's transcript below. Do not use any external knowledge or make assumptions.
+Your knowledge is strictly limited to the information provided in the ${contentType}'s ${contentSource} below. Do not use any external knowledge or make assumptions.
 
-- If the answer is in the transcript, provide a clear and concise explanation.
+- If the answer is in the ${contentSource}, provide a clear and concise explanation.
 - When appropriate, use markdown for code snippets (e.g., \`<div>\`) or bullet points to improve readability.
-- If the answer cannot be found in the transcript, you MUST clearly state that the video does not cover that topic. For example, say "That's a great question, but the video doesn't cover that topic."
+- If the answer cannot be found in the ${contentSource}, you MUST clearly state that the ${contentType} does not cover that topic. For example, say "That's a great question, but the ${contentType} doesn't cover that topic."
 
-Video Title: "${video?.title}"
-Transcript:
+${contentType === 'video' ? 'Video' : 'Article'} Title: "${title}"
+${contentSource.charAt(0).toUpperCase() + contentSource.slice(1)}:
 ---
-${video?.transcript}
+${content}
 ---`;
             
             const apiMessages = updatedMessages.map(msg => ({
@@ -108,7 +115,7 @@ ${video?.transcript}
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask about the video..."
+                    placeholder={`Ask about the ${contentType}...`}
                     className="flex-1 p-2 border-2 border-black rounded-l-md focus:outline-none focus:ring-2 focus:ring-black font-roboto"
                     disabled={isLoading}
                 />

@@ -4,7 +4,7 @@ import type { Video, FAQItem } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import FAQ from '../components/FAQ';
 import Chatbot from '../components/Chatbot';
-import KeyMoments from '../components/KeyMoments';
+import ContentInsights from '../components/ContentInsights';
 
 const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
     const { videos, updateVideo } = useVideoData();
@@ -259,13 +259,13 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
                                 </div>
                             </>
                         )}
-                        {activeTab === 'moments' && <KeyMoments moments={video.keyMoments || []} onTimestampClick={handleSeekTo} />}
+                        {activeTab === 'moments' && <ContentInsights insights={video.keyMoments || []} onLabelClick={handleSeekTo} />}
                         {activeTab === 'transcript' && (
                             <div className="font-mono text-sm text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
                                 {video.transcript}
                             </div>
                         )}
-                        {activeTab === 'chat' && <Chatbot video={video} />}
+                        {activeTab === 'chat' && <Chatbot title={video.title} content={video.transcript} contentType="video" />}
                     </div>
                 </div>
             </div>

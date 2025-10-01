@@ -1,8 +1,9 @@
-import type { Video } from './types';
+import type { Video, Blog } from './types';
 
 export const NAV_LINKS = [
   { name: 'Home', href: '#' },
   { name: 'Videos', href: '#/videos' },
+  { name: 'Blog', href: '#/blogs' },
   { name: 'Connect', href: '#connect' },
 ];
 
@@ -27,4 +28,24 @@ export const SEED_VIDEOS_DATA: Video[] = [
     metaTitle: 'How to Center a Div: 3 Modern CSS Methods | Techiral',
     metaDescription: 'Learn the 3 best ways to center a div using modern CSS: Flexbox, Grid, and Position Absolute. Perfect for beginners and experts alike.',
   },
+];
+
+export const SEED_BLOGS_DATA: Blog[] = [
+    {
+        id: 'understanding-react-hooks',
+        mediumUrl: 'https://medium.com/p/abc12345',
+        title: 'Understanding React Hooks: A Deep Dive into useState and useEffect',
+        description: 'Go beyond the basics of React Hooks. This article explores the "why" behind useState and useEffect, explaining the concept of closures and the rules of Hooks to help you write more predictable and powerful functional components.',
+        content: `React Hooks revolutionized how we write components. Before Hooks, if you needed state or lifecycle methods, you had to refactor your simple functional component into a class component. Hooks let us use state and other React features without writing a class. Let's explore the two most fundamental hooks: useState and useEffect.
+
+**The Magic of useState**
+At its core, useState provides a way for functional components to hold state. When you call \`const [count, setCount] = useState(0);\`, React does a few things. It initializes a state variable, 'count', to 0. It also gives you a function, 'setCount', to update that state. When you call 'setCount', you're not just changing a variable; you're telling React that the component's state has changed and it needs to re-render to reflect that change. This is the declarative power of React in action.
+
+**Side Effects with useEffect**
+What about things that aren't part of the main render, like fetching data, subscribing to events, or manually changing the DOM? These are called "side effects." The useEffect hook is the place for them. Think of it as a combination of componentDidMount, componentDidUpdate, and componentWillUnmount. For example, \`useEffect(() => { document.title = \`You clicked \${count} times\`; }, [count]);\` will run after every render where 'count' has changed. The array at the end, \`[count]\`, is the dependency array. It tells React to only re-run the effect if the values inside have changed, optimizing performance. If you provide an empty array \`[]\`, the effect runs only once, just like componentDidMount.`,
+        faqs: [],
+        keyMoments: [],
+        metaTitle: 'React Hooks Explained: useState & useEffect | Techiral',
+        metaDescription: 'A deep dive into React Hooks. Understand how useState and useEffect work under the hood, including closures and the dependency array.'
+    }
 ];

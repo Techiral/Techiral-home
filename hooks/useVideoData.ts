@@ -78,7 +78,7 @@ Return ONLY a single, valid JSON object with five top-level keys: "description",
 {
   "description": "string",
   "faqs": [{ "question": "string", "answer": "string" }],
-  "keyMoments": [{ "timestamp": "string", "summary": "string" }],
+  "keyMoments": [{ "label": "string", "summary": "string" }],
   "metaTitle": "string",
   "metaDescription": "string"
 }
