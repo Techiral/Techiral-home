@@ -72,7 +72,7 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [videos.length, generateFaqs, JSON.stringify(videoData)]);
+    }, [videos.length > 0, generateFaqs, JSON.stringify(videoData)]);
     
     const TabButton: React.FC<{tabName: 'faq' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
         <button
