@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useVideoData } from '../hooks/useVideoData';
-import type { Video, FAQItem } from '../types';
+import type { Video } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import FAQ from '../components/FAQ';
 import Chatbot from '../components/Chatbot';
@@ -9,49 +9,17 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
     const { videos } = useVideoData();
     const [video, setVideo] = useState<Video | null>(null);
     const [activeTab, setActiveTab] = useState<'faq' | 'transcript' | 'chat'>('faq');
-    const [faqs, setFaqs] = useState<FAQItem[]>([]);
-    const [isLoadingFaqs, setIsLoadingFaqs] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Find the video data from our dynamic hook based on the ID from the URL
         const videoData = videos.find(v => v.id === videoId);
         if (videoData) {
             setVideo(videoData);
-            generateFaqs(videoData.title, videoData.transcript);
         } else {
             setError('Video not found. It may have been deleted.');
         }
     }, [videoId, videos]);
 
-    const generateFaqs = async (title: string, transcript: string) => {
-        setIsLoadingFaqs(true);
-        setError(null);
-        try {
-            const response = await fetch('/api/gemini', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'faq',
-                    payload: { title, transcript }
-                })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to generate FAQs from server.');
-            }
-            
-            setFaqs(result.data.faqs || []);
-        } catch (e) {
-            console.error("Error generating FAQs:", e);
-            setError("Sorry, the AI couldn't generate FAQs for this video. Please check the transcript tab.");
-        } finally {
-            setIsLoadingFaqs(false);
-        }
-    };
-    
     const TabButton: React.FC<{tabName: 'faq' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
         <button
             onClick={() => setActiveTab(tabName)}
@@ -100,7 +68,7 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
                         </div>
                         <div className="bg-gray-50 p-4 rounded-b-lg h-[60vh] overflow-y-auto">
                             {activeTab === 'faq' && (
-                                isLoadingFaqs ? <LoadingSpinner /> : (error ? <p className="text-red-500">{error}</p> : <FAQ faqs={faqs} />)
+                                <FAQ faqs={video?.faqs || []} />
                             )}
                             {activeTab === 'transcript' && (
                                 <div className="font-mono text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">

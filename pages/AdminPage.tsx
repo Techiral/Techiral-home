@@ -7,9 +7,10 @@ const AdminPage: React.FC = () => {
     const { videos, addVideo, updateVideo, deleteVideo } = useVideoData();
     const { logout } = useAuth();
 
-    const initialFormState: Video = { id: '', title: '', description: '', transcript: '' };
+    const initialFormState: Video = { id: '', title: '', description: '', transcript: '', faqs: [] };
     const [formState, setFormState] = useState<Video>(initialFormState);
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -27,18 +28,47 @@ const AdminPage: React.FC = () => {
         setFormState(initialFormState);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        let success = false;
-        if (isEditing) {
-            success = updateVideo(formState.id, formState);
-            if (success) alert("Video updated successfully!");
-        } else {
-            success = addVideo(formState);
-            if (success) alert("Video added successfully!");
-        }
-        if (success) {
-            resetForm();
+        setIsSaving(true);
+
+        try {
+            // Step 1: Generate FAQs from the server
+            const response = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'faq',
+                    payload: { title: formState.title, transcript: formState.transcript }
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to generate FAQs from server.');
+            }
+
+            const faqs = result.data.faqs || [];
+            const videoWithFaqs = { ...formState, faqs };
+
+            // Step 2: Save the complete video object
+            let success = false;
+            if (isEditing) {
+                success = updateVideo(videoWithFaqs.id, videoWithFaqs);
+                if (success) alert("Video updated successfully!");
+            } else {
+                success = addVideo(videoWithFaqs);
+                if (success) alert("Video added successfully!");
+            }
+
+            if (success) {
+                resetForm();
+            }
+        } catch (error) {
+            console.error("Error saving video:", error);
+            alert(`Failed to save video: ${error.message}`);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -79,8 +109,8 @@ const AdminPage: React.FC = () => {
                             <label htmlFor="transcript" className="block font-roboto font-bold mb-1">Transcript</label>
                             <textarea name="transcript" id="transcript" value={formState.transcript} onChange={handleInputChange} rows={8} className="w-full p-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" required></textarea>
                         </div>
-                        <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300">
-                           {isEditing ? 'Save Changes' : 'Add Video'}
+                        <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={isSaving}>
+                           {isSaving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Add Video')}
                         </button>
                     </form>
                 </div>
