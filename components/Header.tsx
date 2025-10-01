@@ -6,7 +6,6 @@ const NAV_LINKS = [
   { name: 'Home', href: '/' },
   { name: 'Videos', href: '/videos' },
   { name: 'Blogs', href: '/blogs' },
-  { name: 'Admin', href: '/admin' },
 ];
 
 const Header: React.FC = () => {
