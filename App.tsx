@@ -1,6 +1,7 @@
+
 import React from 'react';
-import { useRouter } from './hooks/useRouter';
-import { useAuth } from './hooks/useAuth';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import HomePage from './pages/HomePage';
 import VideosPage from './pages/VideosPage';
 import VideoDetailPage from './pages/VideoDetailPage';
@@ -12,33 +13,39 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 
 const App: React.FC = () => {
-  const { path, param } = useRouter();
-  const { isAuthenticated } = useAuth();
+  return (
+    <AuthProvider>
+      <Router>
+        <MainApp />
+      </Router>
+    </AuthProvider>
+  );
+};
 
-  const renderPage = () => {
-    switch (path) {
-      case 'videos':
-        return param ? <VideoDetailPage videoId={param} /> : <VideosPage />;
-      case 'blogs':
-        return param ? <BlogDetailPage blogId={param} /> : <BlogsPage />;
-      case 'admin':
-        // Protected route: show AdminPage if authenticated, otherwise show LoginPage
-        return isAuthenticated ? <AdminPage /> : <AdminLoginPage />;
-      default:
-        return <HomePage />;
-    }
-  };
-
-  // Do not render Header and Footer for the admin login page to provide a focused experience
-  const showHeaderFooter = path !== 'admin' || isAuthenticated;
+const MainApp: React.FC = () => {
+  const { user } = useAuth();
 
   return (
     <div className="bg-white font-roboto">
-      {showHeaderFooter && <Header />}
+      <Header />
       <main>
-        {renderPage()}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/videos" element={<VideosPage />} />
+          <Route path="/videos/:id" element={<VideoDetailPage />} />
+          <Route path="/blogs" element={<BlogsPage />} />
+          <Route path="/blogs/:id" element={<BlogDetailPage />} />
+          <Route 
+            path="/admin" 
+            element={user ? <AdminPage /> : <Navigate to="/admin/login" />}
+          />
+          <Route 
+            path="/admin/login" 
+            element={!user ? <AdminLoginPage /> : <Navigate to="/admin" />}
+          />
+        </Routes>
       </main>
-      {showHeaderFooter && <Footer />}
+      <Footer />
     </div>
   );
 };

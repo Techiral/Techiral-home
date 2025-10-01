@@ -5,13 +5,18 @@ const AdminLoginPage: React.FC = () => {
     const { login } = useAuth();
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        const success = login(password);
-        if (!success) {
-            setError('Incorrect password. Please try again.');
+        setIsLoading(true);
+        try {
+            await login(password);
+        } catch (err: any) {
+            setError(err.message || 'Incorrect password. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -34,11 +39,16 @@ const AdminLoginPage: React.FC = () => {
                             placeholder="Password"
                             className="w-full p-3 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black font-roboto"
                             required
+                            disabled={isLoading}
                         />
                     </div>
                     {error && <p className="font-roboto text-sm text-red-600 text-center">{error}</p>}
-                    <button type="submit" className="w-full bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
-                        Login
+                    <button 
+                        type="submit" 
+                        className="w-full bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:bg-gray-400"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
             </div>

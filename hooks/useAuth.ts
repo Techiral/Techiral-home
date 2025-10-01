@@ -1,31 +1,71 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useContext, createContext, FC, ReactNode } from 'react';
+import { Session, User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 
-const AUTH_KEY = 'techiral_admin_auth';
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  login: (password: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
 
-// IMPORTANT: This is a simple client-side password for deterrent purposes only.
-// In a real application, this would be handled by a secure backend server.
-// Change this password to something personal and private.
-const ADMIN_PASSWORD = 'password123'; 
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-        // Check session storage on initial load
-        return sessionStorage.getItem(AUTH_KEY) === 'true';
+export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
     });
 
-    const login = useCallback((password: string): boolean => {
-        if (password === ADMIN_PASSWORD) {
-            sessionStorage.setItem(AUTH_KEY, 'true');
-            setIsAuthenticated(true);
-            return true;
-        }
-        return false;
-    }, []);
+    // Fetch initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+    });
 
-    const logout = useCallback(() => {
-        sessionStorage.removeItem(AUTH_KEY);
-        setIsAuthenticated(false);
-    }, []);
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
-    return { isAuthenticated, login, logout };
+  const login = async (password: string) => {
+    // Note: Supabase email+password is the standard, but for this specific app's requirement
+    // of a single admin password, we'll use a hardcoded email.
+    const email = 'admin@techiral.com';
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      console.error('Error logging in:', error.message);
+      alert(`Login failed: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        console.error('Error logging out:', error.message);
+        alert(`Logout failed: ${error.message}`);
+    }
+  };
+
+  const value = {
+    user,
+    session,
+    login,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
