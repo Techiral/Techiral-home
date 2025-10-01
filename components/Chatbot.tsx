@@ -3,7 +3,9 @@ import type { Video, ChatMessage } from '../types';
 import LoadingSpinner from './LoadingSpinner';
 
 const Chatbot: React.FC<{ video: Video | null }> = ({ video }) => {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([
+        { role: 'model', text: `Hi there! I'm an AI assistant. Feel free to ask me anything about "${video?.title || 'this video'}".` }
+    ]);
     const [input, setInput] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
