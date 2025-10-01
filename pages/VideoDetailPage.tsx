@@ -1,74 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { useVideoData } from '../hooks/useVideoData';
-import type { Video, FAQItem } from '../types';
+import type { Video } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import FAQ from '../components/FAQ';
 import Chatbot from '../components/Chatbot';
-
-// Initialize the Gemini AI model
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
     const { videos } = useVideoData();
     const [video, setVideo] = useState<Video | null>(null);
     const [activeTab, setActiveTab] = useState<'faq' | 'transcript' | 'chat'>('faq');
-    const [faqs, setFaqs] = useState<FAQItem[]>([]);
-    const [isLoadingFaqs, setIsLoadingFaqs] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Find the video data from our dynamic hook based on the ID from the URL
         const videoData = videos.find(v => v.id === videoId);
         if (videoData) {
             setVideo(videoData);
-            generateFaqs(videoData.title, videoData.transcript);
         } else {
-            setError('Video not found. It may have been deleted.');
+            setError('Video not found. It may have been deleted or is still being processed.');
         }
     }, [videoId, videos]);
 
-    const generateFaqs = async (title: string, transcript: string) => {
-        setIsLoadingFaqs(true);
-        setError(null);
-        try {
-            const prompt = `Based on the transcript of the YouTube video titled "${title}", generate a list of 3-5 frequently asked questions (FAQs) that the video answers. The questions should be concise and relevant to the video's main topics. The answers should be clear summaries derived directly from the transcript content.`;
-
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `${prompt}\n\nTranscript:\n${transcript}`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            faqs: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        question: { type: Type.STRING },
-                                        answer: { type: Type.STRING },
-                                    },
-                                    required: ['question', 'answer'],
-                                },
-                            },
-                        },
-                        required: ['faqs'],
-                    },
-                },
-            });
-
-            const json = JSON.parse(response.text);
-            setFaqs(json.faqs || []);
-        } catch (e) {
-            console.error("Error generating FAQs:", e);
-            setError("Sorry, the AI couldn't generate FAQs for this video. Please check the transcript tab.");
-        } finally {
-            setIsLoadingFaqs(false);
-        }
-    };
-    
     const TabButton: React.FC<{tabName: 'faq' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
         <button
             onClick={() => setActiveTab(tabName)}
@@ -117,7 +68,7 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
                         </div>
                         <div className="bg-gray-50 p-4 rounded-b-lg h-[60vh] overflow-y-auto">
                             {activeTab === 'faq' && (
-                                isLoadingFaqs ? <LoadingSpinner /> : (error ? <p className="text-red-500">{error}</p> : <FAQ faqs={faqs} />)
+                                <FAQ faqs={video?.faqs || []} />
                             )}
                             {activeTab === 'transcript' && (
                                 <div className="font-mono text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">

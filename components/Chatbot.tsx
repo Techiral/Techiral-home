@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import type { Video, ChatMessage } from '../types';
 import LoadingSpinner from './LoadingSpinner';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const Chatbot: React.FC<{ video: Video | null }> = ({ video }) => {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([
+        { role: 'model', text: `Hi! I'm an AI assistant. Ask me anything about "${video?.title}"!` }
+    ]);
     const [input, setInput] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -19,7 +18,7 @@ const Chatbot: React.FC<{ video: Video | null }> = ({ video }) => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!input.trim() || isLoading) return;
+        if (!input.trim() || isLoading || !video) return;
 
         const userMessage: ChatMessage = { role: 'user', text: input };
         setMessages(prev => [...prev, userMessage]);
@@ -27,19 +26,25 @@ const Chatbot: React.FC<{ video: Video | null }> = ({ video }) => {
         setIsLoading(true);
 
         try {
-            const systemInstruction = `You are an expert AI assistant for the YouTube channel "Techiral". You are answering questions about a specific video. Your knowledge is strictly limited to the information provided in the video's transcript. Do not use any external knowledge. If the answer cannot be found in the transcript, clearly state that the video does not cover that topic. Be friendly, concise, and helpful.
-
-Here is the transcript for the video titled "${video?.title}":
----
-${video?.transcript}
----`;
-            
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `${systemInstruction}\n\nUser question: ${input}`,
+            const apiResponse = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'chat',
+                    payload: {
+                        title: video.title,
+                        transcript: video.transcript,
+                        message: input,
+                    }
+                })
             });
 
-            const modelMessage: ChatMessage = { role: 'model', text: response.text };
+            if (!apiResponse.ok) {
+                throw new Error(`API Error: ${apiResponse.statusText}`);
+            }
+
+            const data = await apiResponse.json();
+            const modelMessage: ChatMessage = { role: 'model', text: data.text };
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error) {
