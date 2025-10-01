@@ -54,7 +54,7 @@ ${content}
             const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${process.env.API_KEY}`,
+                    'Authorization': `Bearer ${import.meta.env.VITE_API_KEY}`,
                     'Content-Type': 'application/json',
                     'HTTP-Referer': `https://techiral.com`, 
                     'X-Title': `Techiral AI`,
