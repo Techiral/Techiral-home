@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Frontend for Techiral with serverless functions for secure API calls.",
   "private": true,
+  "scripts": {
+    "build": "echo 'No build step required for frontend'"
+  },
   "dependencies": {
     "@google/genai": "^0.14.0"
   }
