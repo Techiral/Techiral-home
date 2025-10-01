@@ -1,9 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import type { Video, ChatMessage } from '../types';
 import LoadingSpinner from './LoadingSpinner';
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const Chatbot: React.FC<{ video: Video | null }> = ({ video }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -22,24 +19,52 @@ const Chatbot: React.FC<{ video: Video | null }> = ({ video }) => {
         if (!input.trim() || isLoading) return;
 
         const userMessage: ChatMessage = { role: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
 
         try {
             const systemInstruction = `You are an expert AI assistant for the YouTube channel "Techiral". You are answering questions about a specific video. Your knowledge is strictly limited to the information provided in the video's transcript. Do not use any external knowledge. If the answer cannot be found in the transcript, clearly state that the video does not cover that topic. Be friendly, concise, and helpful.
 
-Here is the transcript for the video titled "${video?.title}":
+Video Title: "${video?.title}"
+Transcript:
 ---
 ${video?.transcript}
 ---`;
             
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `${systemInstruction}\n\nUser question: ${input}`,
+            const apiMessages = updatedMessages.map(msg => ({
+                role: msg.role,
+                content: msg.text
+            }));
+
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${process.env.API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': `https://techiral.com`, 
+                    'X-Title': `Techiral AI`,
+                },
+                body: JSON.stringify({
+                    model: 'google/gemini-flash-1.5',
+                    messages: [
+                        { role: 'system', content: systemInstruction },
+                        ...apiMessages
+                    ]
+                })
             });
 
-            const modelMessage: ChatMessage = { role: 'model', text: response.text };
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error("API Error Response:", errorBody);
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            const modelResponseText = data.choices[0].message.content;
+
+            const modelMessage: ChatMessage = { role: 'model', text: modelResponseText };
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error) {

@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { useVideoData } from '../hooks/useVideoData';
 import type { Video, FAQItem } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import FAQ from '../components/FAQ';
 import Chatbot from '../components/Chatbot';
-
-// Initialize the Gemini AI model
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
     const { videos } = useVideoData();
@@ -23,34 +19,34 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
         setIsLoadingFaqs(true);
         setError(null);
         try {
-            const prompt = `Based on the transcript of the YouTube video titled "${title}", generate a list of 3-5 frequently asked questions (FAQs) that the video answers. The questions should be concise and relevant to the video's main topics. The answers should be clear summaries derived directly from the transcript content.`;
+            const prompt = `Based on the transcript of the YouTube video titled "${title}", generate a list of 3-5 frequently asked questions (FAQs) that the video answers. The questions should be concise and relevant to the video's main topics. The answers should be clear summaries derived directly from the transcript content. Return the result as a JSON object with a single key "faqs" which is an array of objects, where each object has "question" and "answer" keys.`;
 
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `${prompt}\n\nTranscript:\n${transcript}`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            faqs: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        question: { type: Type.STRING },
-                                        answer: { type: Type.STRING },
-                                    },
-                                    required: ['question', 'answer'],
-                                },
-                            },
-                        },
-                        required: ['faqs'],
-                    },
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${process.env.API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': `https://techiral.com`, 
+                    'X-Title': `Techiral AI`,
                 },
+                body: JSON.stringify({
+                    model: 'google/gemini-flash-1.5',
+                    messages: [
+                        { role: 'user', content: `${prompt}\n\nTranscript:\n${transcript}` }
+                    ],
+                    response_format: { type: 'json_object' }
+                })
             });
 
-            const json = JSON.parse(response.text);
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error("API Error Response:", errorBody);
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            const jsonContent = data.choices[0].message.content;
+            const json = JSON.parse(jsonContent);
             setFaqs(json.faqs || []);
         } catch (e) {
             console.error("Error generating FAQs:", e);
