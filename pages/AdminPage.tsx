@@ -67,7 +67,11 @@ const AdminPage: React.FC = () => {
 
     const handleEditVideoClick = (video: Video) => {
         setIsEditingVideo(true);
-        setVideoFormState(video);
+        setVideoFormState({
+            ...video,
+            faqs: video.faqs || [],
+            keyMoments: video.keyMoments || [],
+        });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -100,7 +104,11 @@ const AdminPage: React.FC = () => {
 
     const handleEditBlogClick = (blog: Blog) => {
         setIsEditingBlog(true);
-        setBlogFormState(blog);
+        setBlogFormState({
+            ...blog,
+            faqs: blog.faqs || [],
+            keyMoments: blog.keyMoments || [],
+        });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -157,38 +165,62 @@ const AdminPage: React.FC = () => {
                             {isEditingVideo && <button onClick={resetVideoForm} className="text-sm font-roboto font-bold text-black hover:underline">&#43; Add New Video</button>}
                         </div>
                         <form onSubmit={handleVideoSubmit} className="space-y-6">
-                            {/* Video Form Fields */}
                             <div>
-                                <label htmlFor="id" className="block font-roboto font-bold mb-1">YouTube Video ID</label>
-                                <input type="text" name="id" value={videoFormState.id} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required disabled={isEditingVideo} />
+                                <label htmlFor="video-id" className="block font-roboto font-bold mb-1">YouTube Video ID</label>
+                                <input type="text" id="video-id" name="id" value={videoFormState.id} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required disabled={isEditingVideo} />
                             </div>
                             <div>
-                                <label htmlFor="title" className="block font-roboto font-bold mb-1">Title</label>
-                                <input type="text" name="title" value={videoFormState.title} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                                <label htmlFor="video-title" className="block font-roboto font-bold mb-1">Title</label>
+                                <input type="text" id="video-title" name="title" value={videoFormState.title} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
                             </div>
                             {isEditingVideo && (
                                 <div>
-                                    <label htmlFor="description" className="block font-roboto font-bold mb-1">Description</label>
-                                    <textarea name="description" value={videoFormState.description} onChange={handleVideoInputChange} rows={4} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                                    <label htmlFor="video-description" className="block font-roboto font-bold mb-1">Description</label>
+                                    <textarea id="video-description" name="description" value={videoFormState.description} onChange={handleVideoInputChange} rows={4} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
                                 </div>
                             )}
                             <div>
-                                <label htmlFor="transcript" className="block font-roboto font-bold mb-1">Transcript</label>
-                                <textarea name="transcript" value={videoFormState.transcript} onChange={handleVideoInputChange} rows={8} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                                <label htmlFor="video-transcript" className="block font-roboto font-bold mb-1">Transcript</label>
+                                <textarea id="video-transcript" name="transcript" value={videoFormState.transcript} onChange={handleVideoInputChange} rows={8} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
                             </div>
                              {isEditingVideo && (
                                 <>
-                                    {/* SEO, FAQ, KeyMoments Editors for Videos */}
-                                    <div className="space-y-4 pt-4 border-t-2 border-gray-200">
-                                        <h3 className="font-montserrat text-xl font-black">Edit FAQs</h3>
-                                        {(videoFormState.faqs || []).map((faq, index) => (
-                                            <div key={index} className="p-4 bg-white border border-gray-300 rounded-md space-y-2 relative">
+                                    <div className="pt-4 border-t-2 border-gray-200">
+                                        <h3 className="font-montserrat text-xl font-black mb-4">SEO Metadata</h3>
+                                        <div>
+                                            <label htmlFor="video-metaTitle" className="block font-roboto font-bold mb-1">Meta Title</label>
+                                            <input type="text" id="video-metaTitle" name="metaTitle" value={videoFormState.metaTitle || ''} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                        </div>
+                                        <div className="mt-4">
+                                            <label htmlFor="video-metaDescription" className="block font-roboto font-bold mb-1">Meta Description</label>
+                                            <textarea id="video-metaDescription" name="metaDescription" value={videoFormState.metaDescription || ''} onChange={handleVideoInputChange} rows={3} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                        </div>
+                                    </div>
+                                    <div className="pt-4 border-t-2 border-gray-200">
+                                        <h3 className="font-montserrat text-xl font-black mb-4">Edit FAQs</h3>
+                                        {(videoFormState.faqs).map((faq, index) => (
+                                            <div key={index} className="p-4 mb-2 bg-white border border-gray-300 rounded-md space-y-2 relative">
                                                 <button type="button" onClick={() => handleRemoveItem(index, 'faqs', setVideoFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
-                                                <input type="text" placeholder="Question" value={faq.question} onChange={e => handleNestedChange<FAQItem, Video>(index, 'question', e.target.value, 'faqs', setVideoFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <textarea placeholder="Answer" value={faq.answer} onChange={e => handleNestedChange<FAQItem, Video>(index, 'answer', e.target.value, 'faqs', setVideoFormState)} rows={3} className="w-full p-2 border border-gray-300 rounded-md" />
+                                                <label htmlFor={`video-faq-question-${index}`} className="sr-only">FAQ Question {index + 1}</label>
+                                                <input id={`video-faq-question-${index}`} type="text" placeholder="Question" value={faq.question} onChange={e => handleNestedChange<FAQItem, Video>(index, 'question', e.target.value, 'faqs', setVideoFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
+                                                <label htmlFor={`video-faq-answer-${index}`} className="sr-only">FAQ Answer {index + 1}</label>
+                                                <textarea id={`video-faq-answer-${index}`} placeholder="Answer" value={faq.answer} onChange={e => handleNestedChange<FAQItem, Video>(index, 'answer', e.target.value, 'faqs', setVideoFormState)} rows={3} className="w-full p-2 border border-gray-300 rounded-md" />
                                             </div>
                                         ))}
                                         <button type="button" onClick={() => handleAddItem('faqs', setVideoFormState)} className="text-sm font-roboto font-bold text-black hover:underline">+ Add FAQ</button>
+                                    </div>
+                                    <div className="pt-4 border-t-2 border-gray-200">
+                                        <h3 className="font-montserrat text-xl font-black mb-4">Edit Key Moments</h3>
+                                        {(videoFormState.keyMoments).map((moment, index) => (
+                                            <div key={index} className="p-4 mb-2 bg-white border border-gray-300 rounded-md space-y-2 relative">
+                                                <button type="button" onClick={() => handleRemoveItem(index, 'keyMoments', setVideoFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                                <label htmlFor={`video-moment-label-${index}`} className="sr-only">Key Moment Label {index + 1}</label>
+                                                <input id={`video-moment-label-${index}`} type="text" placeholder="Label (e.g., (1:40))" value={moment.label} onChange={e => handleNestedChange<ContentInsight, Video>(index, 'label', e.target.value, 'keyMoments', setVideoFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
+                                                <label htmlFor={`video-moment-summary-${index}`} className="sr-only">Key Moment Summary {index + 1}</label>
+                                                <textarea id={`video-moment-summary-${index}`} placeholder="Summary" value={moment.summary} onChange={e => handleNestedChange<ContentInsight, Video>(index, 'summary', e.target.value, 'keyMoments', setVideoFormState)} rows={2} className="w-full p-2 border border-gray-300 rounded-md" />
+                                            </div>
+                                        ))}
+                                        <button type="button" onClick={() => handleAddItem('keyMoments', setVideoFormState)} className="text-sm font-roboto font-bold text-black hover:underline">+ Add Key Moment</button>
                                     </div>
                                 </>
                             )}
@@ -207,28 +239,63 @@ const AdminPage: React.FC = () => {
                             {isEditingBlog && <button onClick={resetBlogForm} className="text-sm font-roboto font-bold text-black hover:underline">&#43; Add New Blog</button>}
                         </div>
                         <form onSubmit={handleBlogSubmit} className="space-y-6">
-                            {/* Blog Form Fields */}
                             <div>
-                                <label className="block font-roboto font-bold mb-1">Medium URL</label>
-                                <input type="text" name="mediumUrl" value={blogFormState.mediumUrl} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                                <label htmlFor="blog-mediumUrl" className="block font-roboto font-bold mb-1">Medium URL</label>
+                                <input type="text" id="blog-mediumUrl" name="mediumUrl" value={blogFormState.mediumUrl} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
                             </div>
                             <div>
-                                <label className="block font-roboto font-bold mb-1">Title</label>
-                                <input type="text" name="title" value={blogFormState.title} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required disabled={isEditingBlog} />
+                                <label htmlFor="blog-title" className="block font-roboto font-bold mb-1">Title</label>
+                                <input type="text" id="blog-title" name="title" value={blogFormState.title} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required disabled={isEditingBlog} />
                             </div>
                             {isEditingBlog && (
                                 <div>
-                                    <label className="block font-roboto font-bold mb-1">Description</label>
-                                    <textarea name="description" value={blogFormState.description} onChange={handleBlogInputChange} rows={4} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                                    <label htmlFor="blog-description" className="block font-roboto font-bold mb-1">Description</label>
+                                    <textarea id="blog-description" name="description" value={blogFormState.description} onChange={handleBlogInputChange} rows={4} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
                                 </div>
                             )}
                             <div>
-                                <label className="block font-roboto font-bold mb-1">Content</label>
-                                <textarea name="content" value={blogFormState.content} onChange={handleBlogInputChange} rows={8} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                                <label htmlFor="blog-content" className="block font-roboto font-bold mb-1">Content</label>
+                                <textarea id="blog-content" name="content" value={blogFormState.content} onChange={handleBlogInputChange} rows={8} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
                             </div>
                             {isEditingBlog && (
                                 <>
-                                    {/* SEO, FAQ, KeyMoments Editors for Blogs */}
+                                    <div className="pt-4 border-t-2 border-gray-200">
+                                        <h3 className="font-montserrat text-xl font-black mb-4">SEO Metadata</h3>
+                                        <div>
+                                            <label htmlFor="blog-metaTitle" className="block font-roboto font-bold mb-1">Meta Title</label>
+                                            <input type="text" id="blog-metaTitle" name="metaTitle" value={blogFormState.metaTitle || ''} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                        </div>
+                                        <div className="mt-4">
+                                            <label htmlFor="blog-metaDescription" className="block font-roboto font-bold mb-1">Meta Description</label>
+                                            <textarea id="blog-metaDescription" name="metaDescription" value={blogFormState.metaDescription || ''} onChange={handleBlogInputChange} rows={3} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                        </div>
+                                    </div>
+                                    <div className="pt-4 border-t-2 border-gray-200">
+                                        <h3 className="font-montserrat text-xl font-black mb-4">Edit FAQs</h3>
+                                        {(blogFormState.faqs).map((faq, index) => (
+                                            <div key={index} className="p-4 mb-2 bg-white border border-gray-300 rounded-md space-y-2 relative">
+                                                <button type="button" onClick={() => handleRemoveItem(index, 'faqs', setBlogFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                                <label htmlFor={`blog-faq-question-${index}`} className="sr-only">Blog FAQ Question {index + 1}</label>
+                                                <input id={`blog-faq-question-${index}`} type="text" placeholder="Question" value={faq.question} onChange={e => handleNestedChange<FAQItem, Blog>(index, 'question', e.target.value, 'faqs', setBlogFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
+                                                <label htmlFor={`blog-faq-answer-${index}`} className="sr-only">Blog FAQ Answer {index + 1}</label>
+                                                <textarea id={`blog-faq-answer-${index}`} placeholder="Answer" value={faq.answer} onChange={e => handleNestedChange<FAQItem, Blog>(index, 'answer', e.target.value, 'faqs', setBlogFormState)} rows={3} className="w-full p-2 border border-gray-300 rounded-md" />
+                                            </div>
+                                        ))}
+                                        <button type="button" onClick={() => handleAddItem('faqs', setBlogFormState)} className="text-sm font-roboto font-bold text-black hover:underline">+ Add FAQ</button>
+                                    </div>
+                                    <div className="pt-4 border-t-2 border-gray-200">
+                                        <h3 className="font-montserrat text-xl font-black mb-4">Edit Key Takeaways</h3>
+                                        {(blogFormState.keyMoments).map((moment, index) => (
+                                            <div key={index} className="p-4 mb-2 bg-white border border-gray-300 rounded-md space-y-2 relative">
+                                                <button type="button" onClick={() => handleRemoveItem(index, 'keyMoments', setBlogFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                                <label htmlFor={`blog-takeaway-label-${index}`} className="sr-only">Key Takeaway Label {index + 1}</label>
+                                                <input id={`blog-takeaway-label-${index}`} type="text" placeholder="Label (e.g., The Magic of useState)" value={moment.label} onChange={e => handleNestedChange<ContentInsight, Blog>(index, 'label', e.target.value, 'keyMoments', setBlogFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
+                                                <label htmlFor={`blog-takeaway-summary-${index}`} className="sr-only">Key Takeaway Summary {index + 1}</label>
+                                                <textarea id={`blog-takeaway-summary-${index}`} placeholder="Summary" value={moment.summary} onChange={e => handleNestedChange<ContentInsight, Blog>(index, 'summary', e.target.value, 'keyMoments', setBlogFormState)} rows={2} className="w-full p-2 border border-gray-300 rounded-md" />
+                                            </div>
+                                        ))}
+                                        <button type="button" onClick={() => handleAddItem('keyMoments', setBlogFormState)} className="text-sm font-roboto font-bold text-black hover:underline">+ Add Key Takeaway</button>
+                                    </div>
                                 </>
                             )}
                             <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md" disabled={isSubmitting}>
