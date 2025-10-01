@@ -1,8 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Video, FAQItem } from '../types';
+import type { Video } from '../types';
 import { SEED_VIDEOS_DATA } from '../constants';
 
 const LOCAL_STORAGE_KEY = 'techiral_videos';
+
+// Ensure seed data conforms to the new Video type
+const getInitialVideos = (): Video[] => {
+    return SEED_VIDEOS_DATA.map(video => ({
+        ...video,
+        keyMoments: video.keyMoments || [],
+        faqs: video.faqs || [],
+        description: video.description || '',
+        metaTitle: video.metaTitle || video.title,
+        metaDescription: video.metaDescription || video.description.substring(0, 160),
+    }));
+};
+
 
 export const useVideoData = () => {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -14,13 +27,14 @@ export const useVideoData = () => {
         setVideos(JSON.parse(storedVideos));
       } else {
         // If no videos are in storage, seed with initial data
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(SEED_VIDEOS_DATA));
-        setVideos(SEED_VIDEOS_DATA);
+        const initialData = getInitialVideos();
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialData));
+        setVideos(initialData);
       }
     } catch (error) {
       console.error('Failed to load videos from local storage:', error);
       // Fallback to seed data in case of parsing errors
-      setVideos(SEED_VIDEOS_DATA);
+      setVideos(getInitialVideos());
     }
   }, []);
 
@@ -34,29 +48,46 @@ export const useVideoData = () => {
     }
   };
 
-  const addVideo = useCallback(async (newVideo: Omit<Video, 'description' | 'faqs'>): Promise<boolean> => {
-    if (!newVideo.id || !newVideo.title || !newVideo.transcript) {
+  const addVideo = useCallback(async (newVideoData: Pick<Video, 'id' | 'title' | 'transcript'>): Promise<boolean> => {
+    if (!newVideoData.id || !newVideoData.title || !newVideoData.transcript) {
         alert("Video ID, Title, and Transcript are required.");
         return false;
     }
-    const videoExists = videos.some(video => video.id === newVideo.id);
+    const videoExists = videos.some(video => video.id === newVideoData.id);
     if (videoExists) {
         alert("A video with this ID already exists.");
         return false;
     }
 
     try {
-        const prompt = `Based on the following video title and transcript, perform two tasks:
-1.  **Generate Description:** Create a concise and compelling one-paragraph description. This description will be shown in a list of videos, so it should be engaging and accurately summarize the video's content.
-2.  **Generate FAQs:** Create an initial list of 3-5 frequently asked questions (FAQs) with detailed answers based on the video's content.
+        const prompt = `You are an expert technical writer and content strategist for the YouTube channel 'Techiral'. Your task is to analyze a video transcript and generate a comprehensive set of metadata to enhance its presentation and discoverability. Your knowledge is strictly limited to the provided transcript.
 
-Return the result as a single, valid JSON object with two keys: "description" (a string) and "faqs" (an array of objects, where each object has "question" and "answer" string keys). Do not add any introductory text or markdown formatting.
+Based on the following video title and transcript, perform these four tasks:
 
-Video Title: "${newVideo.title}"
+1.  **Generate Description:** Write an engaging, one-paragraph summary for the "About this video" section. It should hook the reader, explain the problem the video solves, and highlight the key takeaways or methods taught.
+
+2.  **Generate FAQs:** Create a list of 3-5 insightful FAQs that a curious developer might ask after watching. Questions should address potential ambiguities or explore related concepts mentioned in the video. Answers must be detailed, practical, and directly supported by the transcript.
+
+3.  **Identify Key Moments:** Identify the most crucial segments. For each, provide the exact timestamp (e.g., "(1:40)") and a concise, action-oriented summary that clearly states the main point or takeaway of that segment.
+
+4.  **Generate SEO Metadata:**
+    - metaTitle: A compelling title under 60 characters that is descriptive and highly clickable.
+    - metaDescription: An enticing summary under 160 characters that encourages users to click through from a search engine results page.
+
+Return ONLY a single, valid JSON object with five top-level keys: "description", "faqs", "keyMoments", "metaTitle", and "metaDescription". The structure must be:
+{
+  "description": "string",
+  "faqs": [{ "question": "string", "answer": "string" }],
+  "keyMoments": [{ "timestamp": "string", "summary": "string" }],
+  "metaTitle": "string",
+  "metaDescription": "string"
+}
+
+Video Title: "${newVideoData.title}"
 
 Transcript:
 ---
-${newVideo.transcript}
+${newVideoData.transcript}
 ---
 `;
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -95,21 +126,24 @@ ${newVideo.transcript}
             throw new Error("AI response did not contain valid JSON.");
         }
 
-        const { description, faqs } = JSON.parse(extractedJsonStr);
+        const { description, faqs, keyMoments, metaTitle, metaDescription } = JSON.parse(extractedJsonStr);
 
-        if (!description || !faqs || faqs.length === 0) {
-            throw new Error("AI returned incomplete data (description or FAQs missing).");
+        if (!description || !faqs || !keyMoments || !metaTitle || !metaDescription) {
+            throw new Error("AI returned incomplete data (description, FAQs, key moments, or SEO metadata missing).");
         }
 
-        const videoWithGeneratedContent: Video = {
-            ...newVideo,
+        const completeVideo: Video = {
+            ...newVideoData,
             description,
             faqs,
+            keyMoments,
+            metaTitle,
+            metaDescription,
         };
 
-        const updatedVideos = [...videos, videoWithGeneratedContent];
+        const updatedVideos = [...videos, completeVideo];
         persistVideos(updatedVideos);
-        alert("Video added successfully! Description and initial FAQs were generated automatically.");
+        alert("Video added successfully! All content, including SEO metadata, was generated automatically.");
         return true;
 
     } catch (error) {

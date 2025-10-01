@@ -20,6 +20,11 @@ export const SEED_VIDEOS_DATA: Video[] = [
 
 (1:40) Our third and final method is the classic 'position absolute' with transforms. This one is useful when the item you're centering needs to be taken out of the normal document flow, like for a modal or a popup. First, you set the parent container to 'position: relative'. Then, on the child div you want to center, you set 'position: absolute', 'top: 50%', and 'left: 50%'. Now, this gets it close, but the top-left corner is at the center, not the div itself. The magic final step is to add 'transform: translate(-50%, -50%)'. This transform pulls the div back up and to the left by half of its own width and height, resulting in perfect centering. It's a bit more verbose, but it's essential for certain UI patterns.
 
-(2:25) So there you have it. Flexbox for everyday use, Grid for clean syntax and 2D layouts, and Position Absolute for elements outside the normal flow. Stop struggling and start centering like a pro. If this helped you, drop a like and subscribe for more web development tips. (2:40) (Outro Music)`
+(2:25) So there you have it. Flexbox for everyday use, Grid for clean syntax and 2D layouts, and Position Absolute for elements outside the normal flow. Stop struggling and start centering like a pro. If this helped you, drop a like and subscribe for more web development tips. (2:40) (Outro Music)`,
+    // FIX: Add missing properties to satisfy the Video type.
+    faqs: [],
+    keyMoments: [],
+    metaTitle: 'How to Center a Div: 3 Modern CSS Methods | Techiral',
+    metaDescription: 'Learn the 3 best ways to center a div using modern CSS: Flexbox, Grid, and Position Absolute. Perfect for beginners and experts alike.',
   },
 ];

@@ -17,7 +17,10 @@ export interface Video {
   title: string;
   description: string;
   transcript: string;
-  faqs?: FAQItem[]; // Generated FAQs are now stored with the video
+  faqs: FAQItem[];
+  keyMoments: KeyMoment[];
+  metaTitle?: string;
+  metaDescription?: string;
 }
 
 export interface FAQItem {
