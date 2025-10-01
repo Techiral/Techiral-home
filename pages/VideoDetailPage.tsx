@@ -30,11 +30,10 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
                     'X-Title': `Techiral AI`,
                 },
                 body: JSON.stringify({
-                    model: 'google/gemini-flash-1.5',
+                    model: 'x-ai/grok-4-fast:free',
                     messages: [
                         { role: 'user', content: `${prompt}\n\nTranscript:\n${transcript}` }
-                    ],
-                    response_format: { type: 'json_object' }
+                    ]
                 })
             });
 
@@ -46,8 +45,22 @@ const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
 
             const data = await response.json();
             const jsonContent = data.choices[0].message.content;
-            const json = JSON.parse(jsonContent);
-            setFaqs(json.faqs || []);
+            
+            // Helper to extract JSON from a string that might be wrapped in markdown or other text
+            const extractJsonString = (str: string): string | null => {
+                const match = str.match(/\{[\s\S]*\}/);
+                return match ? match[0] : null;
+            };
+
+            const extractedJsonStr = extractJsonString(jsonContent);
+
+            if (extractedJsonStr) {
+                const json = JSON.parse(extractedJsonStr);
+                setFaqs(json.faqs || []);
+            } else {
+                 console.error("Could not extract JSON from AI response:", jsonContent);
+                 throw new Error("AI response did not contain valid JSON.");
+            }
         } catch (e) {
             console.error("Error generating FAQs:", e);
             setError("Sorry, the AI couldn't generate FAQs for this video. Please check the transcript tab.");

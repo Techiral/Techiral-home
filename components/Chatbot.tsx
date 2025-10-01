@@ -47,7 +47,7 @@ ${video?.transcript}
                     'X-Title': `Techiral AI`,
                 },
                 body: JSON.stringify({
-                    model: 'google/gemini-flash-1.5',
+                    model: 'x-ai/grok-4-fast:free',
                     messages: [
                         { role: 'system', content: systemInstruction },
                         ...apiMessages
