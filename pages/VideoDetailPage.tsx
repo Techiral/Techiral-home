@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams } from 'react-router-dom'; // Import useParams
 import { useVideoData } from '../hooks/useVideoData';
 import type { Video, FAQItem } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -6,7 +7,9 @@ import FAQ from '../components/FAQ';
 import Chatbot from '../components/Chatbot';
 import ContentInsights from '../components/ContentInsights';
 
-const VideoDetailPage: React.FC<{ videoId: string }> = ({ videoId }) => {
+// Remove videoId from props
+const VideoDetailPage: React.FC = () => {
+    const { id: videoId } = useParams<{ id: string }>(); // Get videoId from URL
     const { videos, updateVideo } = useVideoData();
     const [video, setVideo] = useState<Video | null>(null);
     const [activeTab, setActiveTab] = useState<'summary' | 'moments' | 'transcript' | 'chat'>('summary');
