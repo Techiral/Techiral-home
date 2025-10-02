@@ -86,7 +86,7 @@ const AdminPage: React.FC = () => {
         let success = false;
         if (isEditingVideo) {
             const videoToUpdate = { ...videoFormState, faqs: videoFormState.faqs || [], keyMoments: videoFormState.keyMoments || [] };
-            success = updateVideo(videoToUpdate.id, videoToUpdate);
+            success = await updateVideo(videoToUpdate.id, videoToUpdate);
         } else {
             const { id, title, transcript } = videoFormState;
             success = await addVideo({ id, title, transcript });
@@ -129,6 +129,13 @@ const AdminPage: React.FC = () => {
         }
         if (success) resetBlogForm();
         setIsSubmitting(false);
+    };
+
+    const handleBlogDelete = async (blogId: string) => {
+        const success = await deleteBlog(blogId);
+        if (success) {
+            // The state update is already handled in useBlogData
+        }
     };
 
     const TabButton: React.FC<{ tab: AdminTab, children: React.ReactNode }> = ({ tab, children }) => (
@@ -342,7 +349,7 @@ const AdminPage: React.FC = () => {
                                         </div>
                                         <div className="flex space-x-2">
                                             <button onClick={() => handleEditBlogClick(blog)} className="bg-blue-600 text-white font-roboto font-bold py-2 px-4 rounded-md">Edit</button>
-                                            <button onClick={() => deleteBlog(blog.id)} className="bg-red-600 text-white font-roboto font-bold py-2 px-4 rounded-md">Delete</button>
+                                            <button onClick={() => handleBlogDelete(blog.id)} className="bg-red-600 text-white font-roboto font-bold py-2 px-4 rounded-md">Delete</button>
                                         </div>
                                     </div>
                                 )) : <p>No blogs found.</p>}

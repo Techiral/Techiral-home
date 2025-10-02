@@ -130,7 +130,7 @@ export const useBlogData = () => {
     }
   }, []);
 
-  const deleteBlog = useCallback(async (blogId: string) => {
+  const deleteBlog = useCallback(async (blogId: string): Promise<boolean> => {
     if (window.confirm('Are you sure you want to delete this blog post?')) {
       try {
         const { error } = await supabase.from('blogs').delete().eq('id', blogId);
@@ -139,11 +139,14 @@ export const useBlogData = () => {
         }
         setBlogs(prevBlogs => prevBlogs.filter(blog => blog.id !== blogId));
         alert('Blog deleted successfully!');
+        return true;
       } catch (error) {
         console.error('Failed to delete blog:', error);
         alert('Failed to delete blog.');
+        return false;
       }
     }
+    return false;
   }, []);
 
   return { blogs, addBlog, updateBlog, deleteBlog };
