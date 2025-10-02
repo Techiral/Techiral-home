@@ -30,6 +30,28 @@ export const useBlogData = () => {
     fetchBlogs();
   }, [fetchBlogs]);
 
+  const fetchBlogById = useCallback(async (blogId: string): Promise<Blog | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('id', blogId)
+        .single();
+
+      if (error) {
+        // PostgREST errors for no rows found can be ignored, as we'll return null
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      console.error(`Failed to load blog with id ${blogId}:`, error);
+      return null;
+    }
+  }, []);
+
   const addBlog = useCallback(async (newBlogData: Pick<Blog, 'mediumUrl' | 'title' | 'content' | 'thumbnailUrl'>): Promise<boolean> => {
     if (!newBlogData.mediumUrl || !newBlogData.title || !newBlogData.content) {
         alert("Medium URL, Title, and Content are required.");
@@ -182,5 +204,5 @@ export const useBlogData = () => {
     return false;
   }, [fetchBlogs]);
 
-  return { blogs, addBlog, updateBlog, deleteBlog };
+  return { blogs, fetchBlogs, fetchBlogById, addBlog, updateBlog, deleteBlog };
 };

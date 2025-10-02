@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useBlogData } from '../hooks/useBlogData';
 import type { Blog, FAQItem } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -7,25 +7,33 @@ import Chatbot from '../components/Chatbot';
 import ContentInsights from '../components/ContentInsights';
 
 const BlogDetailPage: React.FC<{ blogId: string }> = ({ blogId }) => {
-    const { blogs, updateBlog } = useBlogData();
+    const { fetchBlogById, updateBlog } = useBlogData();
     const [blog, setBlog] = useState<Blog | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'summary' | 'moments' | 'transcript' | 'chat'>('summary');
     const [isGeneratingMoreFaqs, setIsGeneratingMoreFaqs] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
 
-    const blogDataFromHook = blogs.find(b => b.id === blogId);
+    const loadBlog = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const fetchedBlog = await fetchBlogById(blogId);
+            if (fetchedBlog) {
+                setBlog(fetchedBlog);
+            } else {
+                setError('Blog post not found. It may have been moved or deleted.');
+            }
+        } catch (err) {
+            console.error('Error fetching blog post:', err);
+            setError('An error occurred while loading the blog post.');
+        }
+        setIsLoading(false);
+    }, [blogId, fetchBlogById]);
 
     useEffect(() => {
-        if (blogDataFromHook) {
-            if (JSON.stringify(blogDataFromHook) !== JSON.stringify(blog)) {
-                setBlog(blogDataFromHook);
-            }
-        } else {
-            if (blogs.length > 0) {
-                setError('Blog post not found. It may have been deleted.');
-            }
-        }
-    }, [blogs, blogId, blogDataFromHook, blog]);
+        loadBlog();
+    }, [loadBlog]);
 
     useEffect(() => {
         const originalTitle = document.title;
@@ -110,7 +118,7 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
                 const updatedFaqs = [...(blog.faqs || []), ...uniqueNewFaqs];
                 const updatedBlog = { ...blog, faqs: updatedFaqs };
                 setBlog(updatedBlog);
-                updateBlog(blog.id, updatedBlog);
+                await updateBlog(blog.id, updatedBlog);
             }
 
         } catch (e) {
@@ -134,9 +142,9 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
         </button>
     );
 
-    if (!blog && !error) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
-    if (error && !blog) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold p-8">{error}</div>;
-    if (!blog) return null;
+    if (isLoading) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
+    if (error) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold p-8">{error}</div>;
+    if (!blog) return null; // Should ideally not be reached if error is handled
 
     return (
         <div className="bg-white text-black py-16 md:py-24 px-6">
@@ -177,13 +185,11 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
                             </>
                         )}
                         {activeTab === 'moments' && <ContentInsights insights={blog.keyMoments || []} />}
-                        {/* FIX: Corrected typo from active_tab to activeTab */}
                         {activeTab === 'transcript' && (
                             <div className="font-serif text-base text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
                                 {blog.content}
                             </div>
                         )}
-                        {/* FIX: Corrected typo from active_tab to activeTab */}
                         {activeTab === 'chat' && <Chatbot title={blog.title} content={blog.content} contentType="article" />}
                     </div>
                 </div>
