@@ -130,7 +130,7 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
     const TabButton: React.FC<{tabName: 'summary' | 'moments' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
         <button
             onClick={() => setActiveTab(tabName)}
-            className={`py-3 px-6 font-roboto font-bold text-sm md:text-base transition-colors duration-300 border-b-4 ${
+            className={`py-3 px-4 sm:px-6 font-roboto font-bold text-xs sm:text-sm md:text-base transition-colors duration-300 border-b-4 ${
                 activeTab === tabName
                     ? 'border-black text-black'
                     : 'border-transparent text-gray-500 hover:text-black'
@@ -141,21 +141,21 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
     );
 
     if (isLoading) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
-    if (error) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold p-8">{error}</div>;
+    if (error) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold p-8 text-center">{error}</div>;
     if (!blog) return null;
 
     return (
-        <div className="bg-white text-black py-16 md:py-24 px-6">
+        <div className="bg-white text-black py-12 sm:py-16 md:py-24 px-4 sm:px-6">
             <div className="container mx-auto max-w-4xl">
-                <div className="text-center mb-12">
-                     <h1 className="font-montserrat text-3xl md:text-5xl font-black mb-4">{blog.title}</h1>
-                     <a href={blog.mediumUrl} target="_blank" rel="noopener noreferrer" className="bg-black text-white font-roboto font-bold py-3 px-8 rounded-full hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 inline-block">
-                        Read the Full Article on Medium
+                <div className="text-center mb-10 sm:mb-12">
+                     <h1 className="font-montserrat text-2xl sm:text-3xl md:text-5xl font-black mb-4">{blog.title}</h1>
+                     <a href={blog.mediumUrl} target="_blank" rel="noopener noreferrer" className="bg-black text-white font-roboto font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-full hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 inline-block text-sm sm:text-base">
+                        Read on Medium
                     </a>
                 </div>
 
-                <div className="mb-12">
-                    <h2 className="font-montserrat text-2xl font-black mb-3">About this article</h2>
+                <div className="mb-10 sm:mb-12">
+                    <h2 className="font-montserrat text-xl sm:text-2xl font-black mb-3">About this article</h2>
                     <p className="font-roboto text-gray-700 leading-relaxed whitespace-pre-wrap">{blog.description}</p>
                 </div>
                 
@@ -166,7 +166,7 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
                        <TabButton tabName="transcript">Full Article</TabButton>
                        <TabButton tabName="chat">Chat</TabButton>
                     </div>
-                    <div className="bg-gray-50 p-6 rounded-lg min-h-[400px]">
+                    <div className="bg-gray-50 p-4 sm:p-6 rounded-lg min-h-[400px]">
                         {error && <p className="text-red-500 mb-4">{error}</p>}
                         {activeTab === 'summary' && (
                             <>
@@ -175,7 +175,7 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
                                     <button
                                         onClick={handleGenerateMoreFaqs}
                                         disabled={isGeneratingMoreFaqs}
-                                        className="bg-black text-white font-roboto font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                        className="bg-black text-white font-roboto font-bold py-2 px-5 sm:py-2 sm:px-6 rounded-full hover:bg-gray-800 transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed text-sm sm:text-base"
                                     >
                                         {isGeneratingMoreFaqs ? 'Generating...' : 'Generate More FAQs'}
                                     </button>
@@ -184,7 +184,7 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
                         )}
                         {activeTab === 'moments' && <ContentInsights insights={blog.keyMoments || []} />}
                         {activeTab === 'transcript' && (
-                            <div className="font-serif text-base text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
+                            <div className="font-serif text-sm sm:text-base text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
                                 {blog.content}
                             </div>
                         )}

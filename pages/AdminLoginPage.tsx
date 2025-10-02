@@ -23,9 +23,9 @@ const AdminLoginPage: React.FC = () => {
 
     return (
         <section className="bg-gray-50 flex items-center justify-center min-h-screen">
-            <div className="w-full max-w-md mx-auto p-8 space-y-6 bg-white rounded-lg shadow-xl">
+            <div className="w-full max-w-md mx-auto p-6 sm:p-8 space-y-6 bg-white rounded-lg shadow-xl">
                 <div className="text-center">
-                    <h1 className="text-3xl font-montserrat font-black text-black">Admin Access</h1>
+                    <h1 className="text-2xl sm:text-3xl font-montserrat font-black text-black">Admin Access</h1>
                     <p className="text-gray-600 mt-2 font-roboto">Please enter your credentials to manage content.</p>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,7 +60,7 @@ const AdminLoginPage: React.FC = () => {
                     {error && <p className="font-roboto text-sm text-red-600 text-center">{error}</p>}
                     <button 
                         type="submit" 
-                        className="w-full bg-black text-white font-roboto font-bold py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:bg-gray-400"
+                        className="w-full bg-black text-white font-roboto font-bold py-3 px-5 sm:py-3 sm:px-6 rounded-md hover:bg-gray-800 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:bg-gray-400"
                         disabled={isLoading}
                     >
                         {isLoading ? 'Logging in...' : 'Login'}

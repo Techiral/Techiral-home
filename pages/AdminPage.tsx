@@ -141,17 +141,17 @@ const AdminPage: React.FC = () => {
     const TabButton: React.FC<{ tab: AdminTab, children: React.ReactNode }> = ({ tab, children }) => (
         <button
             onClick={() => setActiveTab(tab)}
-            className={`py-2 px-6 font-roboto font-bold rounded-t-lg transition-colors duration-300 ${activeTab === tab ? 'bg-gray-50 text-black' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+            className={`py-2 px-4 sm:px-6 font-roboto font-bold rounded-t-lg transition-colors duration-300 ${activeTab === tab ? 'bg-gray-50 text-black' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
         >
             {children}
         </button>
     );
 
     return (
-        <section className="bg-white text-black py-20 md:py-24 px-6 min-h-screen">
+        <section className="bg-white text-black py-16 sm:py-20 md:py-24 px-4 sm:px-6 min-h-screen">
             <div className="container mx-auto max-w-4xl">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="font-montserrat text-4xl md:text-5xl font-black">Admin Panel</h1>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+                    <h1 className="font-montserrat text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-0">Admin Panel</h1>
                     <button onClick={logout} className="bg-gray-700 text-white font-roboto font-bold py-2 px-4 rounded-md hover:bg-black transition-colors duration-300">
                         Logout
                     </button>
@@ -164,9 +164,9 @@ const AdminPage: React.FC = () => {
 
                 {/* Video Manager */}
                 {activeTab === 'videos' && (
-                    <div className="bg-gray-50 p-8 rounded-b-lg shadow-md mb-12">
+                    <div className="bg-gray-50 p-4 sm:p-8 rounded-b-lg shadow-md mb-12">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="font-montserrat text-2xl font-black">{isEditingVideo ? 'Edit Video' : 'Add New Video'}</h2>
+                            <h2 className="font-montserrat text-xl sm:text-2xl font-black">{isEditingVideo ? 'Edit Video' : 'Add New Video'}</h2>
                             {isEditingVideo && <button onClick={resetVideoForm} className="text-sm font-roboto font-bold text-black hover:underline">&#43; Add New Video</button>}
                         </div>
                         <form onSubmit={handleVideoSubmit} className="space-y-6">
@@ -191,7 +191,7 @@ const AdminPage: React.FC = () => {
                              {isEditingVideo && (
                                 <>
                                     <div className="pt-4 border-t-2 border-gray-200">
-                                        <h3 className="font-montserrat text-xl font-black mb-4">SEO Metadata</h3>
+                                        <h3 className="font-montserrat text-lg sm:text-xl font-black mb-4">SEO Metadata</h3>
                                         <div>
                                             <label htmlFor="video-metaTitle" className="block font-roboto font-bold mb-1">Meta Title</label>
                                             <input type="text" id="video-metaTitle" name="metaTitle" value={videoFormState.metaTitle || ''} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
@@ -202,10 +202,10 @@ const AdminPage: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="pt-4 border-t-2 border-gray-200">
-                                        <h3 className="font-montserrat text-xl font-black mb-4">Edit FAQs</h3>
+                                        <h3 className="font-montserrat text-lg sm:text-xl font-black mb-4">Edit FAQs</h3>
                                         {(videoFormState.faqs).map((faq, index) => (
                                             <div key={index} className="p-4 mb-2 bg-white border border-gray-300 rounded-md space-y-2 relative">
-                                                <button type="button" onClick={() => handleRemoveItem(index, 'faqs', setVideoFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                                <button type="button" onClick={() => handleRemoveItem(index, 'faqs', setVideoFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-lg sm:text-xl">&times;</button>
                                                 <label htmlFor={`video-faq-question-${index}`} className="sr-only">FAQ Question {index + 1}</label>
                                                 <input id={`video-faq-question-${index}`} type="text" placeholder="Question" value={faq.question} onChange={e => handleNestedChange<FAQItem, Video>(index, 'question', e.target.value, 'faqs', setVideoFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <label htmlFor={`video-faq-answer-${index}`} className="sr-only">FAQ Answer {index + 1}</label>
@@ -215,10 +215,10 @@ const AdminPage: React.FC = () => {
                                         <button type="button" onClick={() => handleAddItem('faqs', setVideoFormState)} className="text-sm font-roboto font-bold text-black hover:underline">+ Add FAQ</button>
                                     </div>
                                     <div className="pt-4 border-t-2 border-gray-200">
-                                        <h3 className="font-montserrat text-xl font-black mb-4">Edit Key Moments</h3>
+                                        <h3 className="font-montserrat text-lg sm:text-xl font-black mb-4">Edit Key Moments</h3>
                                         {(videoFormState.keyMoments).map((moment, index) => (
                                             <div key={index} className="p-4 mb-2 bg-white border border-gray-300 rounded-md space-y-2 relative">
-                                                <button type="button" onClick={() => handleRemoveItem(index, 'keyMoments', setVideoFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                                <button type="button" onClick={() => handleRemoveItem(index, 'keyMoments', setVideoFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-lg sm:text-xl">&times;</button>
                                                 <label htmlFor={`video-moment-label-${index}`} className="sr-only">Key Moment Label {index + 1}</label>
                                                 <input id={`video-moment-label-${index}`} type="text" placeholder="Label (e.g., (1:40))" value={moment.label} onChange={e => handleNestedChange<ContentInsight, Video>(index, 'label', e.target.value, 'keyMoments', setVideoFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <label htmlFor={`video-moment-summary-${index}`} className="sr-only">Key Moment Summary {index + 1}</label>
@@ -238,9 +238,9 @@ const AdminPage: React.FC = () => {
                 
                 {/* Blog Manager */}
                 {activeTab === 'blogs' && (
-                     <div className="bg-gray-50 p-8 rounded-b-lg shadow-md mb-12">
+                     <div className="bg-gray-50 p-4 sm:p-8 rounded-b-lg shadow-md mb-12">
                          <div className="flex justify-between items-center mb-6">
-                            <h2 className="font-montserrat text-2xl font-black">{isEditingBlog ? 'Edit Blog' : 'Add New Blog'}</h2>
+                            <h2 className="font-montserrat text-xl sm:text-2xl font-black">{isEditingBlog ? 'Edit Blog' : 'Add New Blog'}</h2>
                             {isEditingBlog && <button onClick={resetBlogForm} className="text-sm font-roboto font-bold text-black hover:underline">&#43; Add New Blog</button>}
                         </div>
                         <form onSubmit={handleBlogSubmit} className="space-y-6">
@@ -271,7 +271,7 @@ const AdminPage: React.FC = () => {
                             {isEditingBlog && (
                                 <>
                                     <div className="pt-4 border-t-2 border-gray-200">
-                                        <h3 className="font-montserrat text-xl font-black mb-4">SEO Metadata</h3>
+                                        <h3 className="font-montserrat text-lg sm:text-xl font-black mb-4">SEO Metadata</h3>
                                         <div>
                                             <label htmlFor="blog-metaTitle" className="block font-roboto font-bold mb-1">Meta Title</label>
                                             <input type="text" id="blog-metaTitle" name="metaTitle" value={blogFormState.metaTitle || ''} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
@@ -282,10 +282,10 @@ const AdminPage: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="pt-4 border-t-2 border-gray-200">
-                                        <h3 className="font-montserrat text-xl font-black mb-4">Edit FAQs</h3>
+                                        <h3 className="font-montserrat text-lg sm:text-xl font-black mb-4">Edit FAQs</h3>
                                         {(blogFormState.faqs).map((faq, index) => (
                                             <div key={index} className="p-4 mb-2 bg-white border border-gray-300 rounded-md space-y-2 relative">
-                                                <button type="button" onClick={() => handleRemoveItem(index, 'faqs', setBlogFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                                <button type="button" onClick={() => handleRemoveItem(index, 'faqs', setBlogFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-lg sm:text-xl">&times;</button>
                                                 <label htmlFor={`blog-faq-question-${index}`} className="sr-only">Blog FAQ Question {index + 1}</label>
                                                 <input id={`blog-faq-question-${index}`} type="text" placeholder="Question" value={faq.question} onChange={e => handleNestedChange<FAQItem, Blog>(index, 'question', e.target.value, 'faqs', setBlogFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <label htmlFor={`blog-faq-answer-${index}`} className="sr-only">Blog FAQ Answer {index + 1}</label>
@@ -295,10 +295,10 @@ const AdminPage: React.FC = () => {
                                         <button type="button" onClick={() => handleAddItem('faqs', setBlogFormState)} className="text-sm font-roboto font-bold text-black hover:underline">+ Add FAQ</button>
                                     </div>
                                     <div className="pt-4 border-t-2 border-gray-200">
-                                        <h3 className="font-montserrat text-xl font-black mb-4">Edit Key Takeaways</h3>
+                                        <h3 className="font-montserrat text-lg sm:text-xl font-black mb-4">Edit Key Takeaways</h3>
                                         {(blogFormState.keyMoments).map((moment, index) => (
                                             <div key={index} className="p-4 mb-2 bg-white border border-gray-300 rounded-md space-y-2 relative">
-                                                <button type="button" onClick={() => handleRemoveItem(index, 'keyMoments', setBlogFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                                <button type="button" onClick={() => handleRemoveItem(index, 'keyMoments', setBlogFormState)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-lg sm:text-xl">&times;</button>
                                                 <label htmlFor={`blog-takeaway-label-${index}`} className="sr-only">Key Takeaway Label {index + 1}</label>
                                                 <input id={`blog-takeaway-label-${index}`} type="text" placeholder="Label (e.g., The Magic of useState)" value={moment.label} onChange={e => handleNestedChange<ContentInsight, Blog>(index, 'label', e.target.value, 'keyMoments', setBlogFormState)} className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <label htmlFor={`blog-takeaway-summary-${index}`} className="sr-only">Key Takeaway Summary {index + 1}</label>
@@ -320,11 +320,11 @@ const AdminPage: React.FC = () => {
                 <div>
                      {activeTab === 'videos' && (
                         <div>
-                             <h2 className="font-montserrat text-2xl font-black mb-6">Manage Existing Videos</h2>
+                             <h2 className="font-montserrat text-xl sm:text-2xl font-black mb-6">Manage Existing Videos</h2>
                              <div className="space-y-4">
                                 {videos.length > 0 ? [...videos].reverse().map(video => (
-                                    <div key={video.id} className="bg-gray-50 p-4 rounded-lg shadow-sm flex justify-between items-center">
-                                        <div>
+                                    <div key={video.id} className="bg-gray-50 p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                        <div className="mb-4 sm:mb-0">
                                             <h3 className="font-roboto font-bold">{video.title}</h3>
                                             <p className="text-sm text-gray-600">ID: {video.id}</p>
                                         </div>
@@ -339,11 +339,11 @@ const AdminPage: React.FC = () => {
                     )}
                     {activeTab === 'blogs' && (
                         <div>
-                            <h2 className="font-montserrat text-2xl font-black mb-6">Manage Existing Blogs</h2>
+                            <h2 className="font-montserrat text-xl sm:text-2xl font-black mb-6">Manage Existing Blogs</h2>
                             <div className="space-y-4">
                                 {blogs.length > 0 ? [...blogs].reverse().map(blog => (
-                                    <div key={blog.id} className="bg-gray-50 p-4 rounded-lg shadow-sm flex justify-between items-center">
-                                        <div>
+                                    <div key={blog.id} className="bg-gray-50 p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                        <div className="mb-4 sm:mb-0">
                                             <h3 className="font-roboto font-bold">{blog.title}</h3>
                                             <p className="text-sm text-gray-600">ID: {blog.id}</p>
                                         </div>
