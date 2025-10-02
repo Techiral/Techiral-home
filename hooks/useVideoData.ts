@@ -48,13 +48,10 @@ export const useVideoData = () => {
     try {
         const prompt = `You are an expert technical writer and content strategist for the YouTube channel 'Techiral'. Your task is to analyze a video transcript and generate a comprehensive set of metadata to enhance its presentation and discoverability. Your knowledge is strictly limited to the provided transcript.\n\nBased on the following video title and transcript, perform these four tasks:\n\n1.  **Generate Description:** Write an engaging, one-paragraph summary for the \"About this video\" section. It should hook the reader, explain the problem the video solves, and highlight the key takeaways or methods taught.\n\n2.  **Generate FAQs:** Create a list of 3-5 insightful FAQs that a curious developer might ask after watching. Questions should address potential ambiguities or explore related concepts mentioned in the video. Answers must be detailed, practical, and directly supported by the transcript.\n\n3.  **Identify Key Moments:** Identify the most crucial segments. For each, provide the exact timestamp (e.g., \"(1:40)\") and a concise, action-oriented summary that clearly states the main point or takeaway of that segment.\n\n4.  **Generate SEO Metadata:**\n    - metaTitle: A compelling title under 60 characters that is descriptive and highly clickable.\n    - metaDescription: An enticing summary under 160 characters that encourages users to click through from a search engine results page.\n\nReturn ONLY a single, valid JSON object with five top-level keys: \"description\", \"faqs\", \"keyMoments\", \"metaTitle\", and \"metaDescription\". The structure must be:\n{\n  \"description\": \"string\",\n  \"faqs\": [{ \"question\": \"string\", \"answer\": \"string\" }],\n  \"keyMoments\": [{ \"label\": \"string\", \"summary\": \"string\" }],\n  \"metaTitle\": \"string\",\n  \"metaDescription\": \"string\"\n}\n\nVideo Title: \"${newVideoData.title}\"\n\nTranscript:\n---\n${newVideoData.transcript}\n---\n`;
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const response = await fetch('/api/proxy', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${import.meta.env.VITE_API_KEY}`,
                 'Content-Type': 'application/json',
-                'HTTP-Referer': `https://techiral.com`,
-                'X-Title': `Techiral AI`,
             },
             body: JSON.stringify({
                 model: 'x-ai/grok-4-fast:free',

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom'; // Import Link
 import { useVideoData } from '../hooks/useVideoData';
 import type { Video } from '../types';
+import Seo from '../components/Seo';
 
 const VideoCard: React.FC<{ video: Video }> = ({ video }) => {
   const thumbnailUrl = `https://img.youtube.com/vi/${video.id}/0.jpg`;
@@ -35,34 +36,40 @@ const VideosPage: React.FC = () => {
     }, [videos, searchTerm]);
 
   return (
-    <section id="videos" className="bg-white text-black py-20 md:py-24 px-6 min-h-screen">
-      <div className="container mx-auto">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-            <h1 className="font-montserrat text-4xl md:text-5xl font-black mb-4">Content Library.</h1>
-            <p className="font-roboto text-lg text-gray-700 mb-8">
-                A collection of tutorials, deep dives, and explorations. Each video is enhanced with AI-powered Q&A to help you learn faster.
-            </p>
-            <input 
-                type="text"
-                placeholder="Search videos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full max-w-lg mx-auto p-3 border-2 border-black rounded-full font-roboto focus:outline-none focus:ring-2 focus:ring-black"
-            />
-        </div>
-        <div className="max-w-4xl mx-auto space-y-4">
-          {filteredVideos.length > 0 ? (
-            filteredVideos.map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))
-          ) : (
-             <div className="text-center py-16">
-                <p className="font-roboto text-gray-600">No videos found. Try a different search term or add a video in the admin panel.</p>
+    <>
+        <Seo 
+            title="Content Library - Techiral"
+            description="A collection of tutorials, deep dives, and explorations. Each video is enhanced with AI-powered Q&A to help you learn faster."
+        />
+        <section id="videos" className="bg-white text-black py-20 md:py-24 px-6 min-h-screen">
+        <div className="container mx-auto">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+                <h1 className="font-montserrat text-4xl md:text-5xl font-black mb-4">Content Library.</h1>
+                <p className="font-roboto text-lg text-gray-700 mb-8">
+                    A collection of tutorials, deep dives, and explorations. Each video is enhanced with AI-powered Q&A to help you learn faster.
+                </p>
+                <input 
+                    type="text"
+                    placeholder="Search videos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full max-w-lg mx-auto p-3 border-2 border-black rounded-full font-roboto focus:outline-none focus:ring-2 focus:ring-black"
+                />
             </div>
-          )}
+            <div className="max-w-4xl mx-auto space-y-4">
+            {filteredVideos.length > 0 ? (
+                filteredVideos.map((video) => (
+                <VideoCard key={video.id} video={video} />
+                ))
+            ) : (
+                <div className="text-center py-16">
+                    <p className="font-roboto text-gray-600">No videos found. Try a different search term or add a video in the admin panel.</p>
+                </div>
+            )}
+            </div>
         </div>
-      </div>
-    </section>
+        </section>
+    </>
   );
 };
 

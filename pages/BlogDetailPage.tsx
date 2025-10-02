@@ -1,199 +1,99 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom'; // Import useParams
-import { useBlogData } from '../hooks/useBlogData';
-import type { Blog, FAQItem } from '../types';
-import LoadingSpinner from '../components/LoadingSpinner';
-import FAQ from '../components/FAQ';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import Chatbot from '../components/Chatbot';
 import ContentInsights from '../components/ContentInsights';
+import LoadingSpinner from '../components/LoadingSpinner';
+import Seo from '../components/Seo';
 
-// The component no longer needs to accept a blogId prop
 const BlogDetailPage: React.FC = () => {
-    const { id: blogId } = useParams<{ id: string }>(); // Get blog ID from URL
-    const { fetchBlogById, updateBlog } = useBlogData();
-    const [blog, setBlog] = useState<Blog | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'summary' | 'moments' | 'transcript' | 'chat'>('summary');
-    const [isGeneratingMoreFaqs, setIsGeneratingMoreFaqs] = useState<boolean>(false);
+  const { id } = useParams<{ id: string }>();
+  const [blog, setBlog] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-    const loadBlog = useCallback(async () => {
-        if (!blogId) {
-            setError('No blog ID provided in the URL.');
-            setIsLoading(false);
-            return;
-        }
-
-        setIsLoading(true);
-        setError(null);
+  useEffect(() => {
+    if (id) {
+      const fetchBlogDetails = async () => {
         try {
-            const fetchedBlog = await fetchBlogById(blogId);
-            if (fetchedBlog) {
-                setBlog(fetchedBlog);
-            } else {
-                setError('Blog post not found. It may have been moved or deleted.');
-            }
+          const response = await fetch(`/api/proxy?endpoint=blogs/${id}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch blog details: ${response.statusText}`);
+          }
+          const data = await response.json();
+          setBlog(data);
         } catch (err) {
-            console.error('Error fetching blog post:', err);
-            setError('An error occurred while loading the blog post.');
+          if (err instanceof Error) {
+            setError(err.message);
+          }
         }
-        setIsLoading(false);
-    }, [blogId, fetchBlogById]);
+      };
+      fetchBlogDetails();
+    }
+  }, [id]);
 
-    useEffect(() => {
-        // This effect will now re-run whenever the blogId from the URL changes
-        loadBlog();
-    }, [loadBlog]);
+  if (!blog) {
+    return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
+  }
 
-    useEffect(() => {
-        const originalTitle = document.title;
-        let metaDescriptionTag = document.querySelector('meta[name="description"]');
-        const originalDescriptionContent = metaDescriptionTag ? metaDescriptionTag.getAttribute('content') : null;
-        
-        if (blog) {
-            if (blog.metaTitle) document.title = blog.metaTitle;
-            if (blog.metaDescription) {
-                if (!metaDescriptionTag) {
-                    metaDescriptionTag = document.createElement('meta');
-                    metaDescriptionTag.setAttribute('name', 'description');
-                    document.head.appendChild(metaDescriptionTag);
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {error}</div>;
+  }
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: blog.title,
+    image: blog.thumbnailUrl,
+    author: {
+        '@type': 'Person',
+        name: 'Techiral'
+    },
+    publisher: {
+        '@type': 'Organization',
+        name: 'Techiral',
+        logo: {
+            '@type': 'ImageObject',
+            url: 'https://www.techiral.com/logo.png' // Replace with your actual logo URL
+        }
+    },
+    datePublished: blog.createdAt, // Assuming you have a createdAt field
+    description: blog.description
+  };
+
+  return (
+    <>
+      <Seo 
+        title={`${blog.title} - Techiral`}
+        description={blog.description}
+        jsonLd={jsonLd}
+      />
+      <div className="bg-white text-black min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <div className="mb-8">
+                {blog.thumbnailUrl && 
+                  <img 
+                    src={blog.thumbnailUrl} 
+                    alt={blog.title} 
+                    className="w-full h-auto rounded-lg shadow-xl mb-6"
+                  />
                 }
-                metaDescriptionTag.setAttribute('content', blog.metaDescription);
-            }
-        }
-
-        return () => {
-            document.title = originalTitle;
-            if (metaDescriptionTag) {
-                if (originalDescriptionContent) {
-                    metaDescriptionTag.setAttribute('content', originalDescriptionContent);
-                } else {
-                    metaDescriptionTag.remove();
-                }
-            }
-        };
-    }, [blog]);
-
-    const handleGenerateMoreFaqs = async () => {
-        if (!blog) return;
-        setIsGeneratingMoreFaqs(true);
-        setError(null);
-
-        const existingQuestions = (blog.faqs || []).map(faq => `- ${faq.question}`).join('\n');
-
-        try {
-             const prompt = `You are an expert AI assistant for the YouTube channel 'Techiral'. Your task is to generate 3 new and insightful FAQs based on the provided blog article content.\n\nThese questions must be substantively different from the existing ones provided below. Your knowledge is strictly limited to the article content. Answers should be practical and directly cite information from the article.\n\nBlog Title: "${blog.title}"\n\nExisting Questions (Do NOT repeat these):\n${existingQuestions}\n\nArticle Content:\n---\n${blog.content}\n---
-
-Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of objects, where each object has "question" and "answer" string keys. Do not include any introductory text or markdown formatting.`;
-            
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                 headers: {
-                    'Authorization': `Bearer ${process.env.API_KEY}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': `https://techiral.com`, 
-                    'X-Title': `Techiral AI`,
-                },
-                body: JSON.stringify({
-                    model: 'x-ai/grok-4-fast:free',
-                    messages: [{ role: 'user', content: prompt }]
-                })
-            });
-
-            if (!response.ok) throw new Error('Failed to generate more FAQs.');
-
-            const data = await response.json();
-            const jsonContent = data.choices[0].message.content;
-            const extractJsonArrayString = (str: string): string | null => str.match(/\[[\s\S]*\]/)?.[0] || null;
-            const extractedJsonStr = extractJsonArrayString(jsonContent);
-            if (!extractedJsonStr) throw new Error('Invalid JSON response for new FAQs.');
-
-            const newFaqs: FAQItem[] = JSON.parse(extractedJsonStr);
-            const existingFaqSet = new Set((blog.faqs || []).map(f => f.question));
-            const uniqueNewFaqs = newFaqs.filter(faq => !existingFaqSet.has(faq.question));
-
-            if (uniqueNewFaqs.length > 0) {
-                const updatedFaqs = [...(blog.faqs || []), ...uniqueNewFaqs];
-                const updatedBlog = { ...blog, faqs: updatedFaqs };
-                setBlog(updatedBlog);
-                await updateBlog(blog.id, updatedBlog);
-            }
-
-        } catch (e) {
-            console.error("Error generating more FAQs:", e);
-            setError("Sorry, could not generate more FAQs at this time.");
-        } finally {
-            setIsGeneratingMoreFaqs(false);
-        }
-    };
-
-    const TabButton: React.FC<{tabName: 'summary' | 'moments' | 'transcript' | 'chat', children: React.ReactNode}> = ({ tabName, children }) => (
-        <button
-            onClick={() => setActiveTab(tabName)}
-            className={`py-3 px-4 sm:px-6 font-roboto font-bold text-xs sm:text-sm md:text-base transition-colors duration-300 border-b-4 ${
-                activeTab === tabName
-                    ? 'border-black text-black'
-                    : 'border-transparent text-gray-500 hover:text-black'
-            }`}
-        >
-            {children}
-        </button>
-    );
-
-    if (isLoading) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
-    if (error) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold p-8 text-center">{error}</div>;
-    if (!blog) return null;
-
-    return (
-        <div className="bg-white text-black py-12 sm:py-16 md:py-24 px-4 sm:px-6">
-            <div className="container mx-auto max-w-4xl">
-                <div className="text-center mb-10 sm:mb-12">
-                     <h1 className="font-montserrat text-2xl sm:text-3xl md:text-5xl font-black mb-4">{blog.title}</h1>
-                     <a href={blog.mediumUrl} target="_blank" rel="noopener noreferrer" className="bg-black text-white font-roboto font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-full hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 inline-block text-sm sm:text-base">
-                        Read on Medium
-                    </a>
-                </div>
-
-                <div className="mb-10 sm:mb-12">
-                    <h2 className="font-montserrat text-xl sm:text-2xl font-black mb-3">About this article</h2>
-                    <p className="font-roboto text-gray-700 leading-relaxed whitespace-pre-wrap">{blog.description}</p>
-                </div>
-                
-                <div>
-                    <div className="flex justify-center border-b-2 border-gray-200 mb-6">
-                       <TabButton tabName="summary">AI Summary</TabButton>
-                       <TabButton tabName="moments">Key Takeaways</TabButton>
-                       <TabButton tabName="transcript">Full Article</TabButton>
-                       <TabButton tabName="chat">Chat</TabButton>
-                    </div>
-                    <div className="bg-gray-50 p-4 sm:p-6 rounded-lg min-h-[400px]">
-                        {error && <p className="text-red-500 mb-4">{error}</p>}
-                        {activeTab === 'summary' && (
-                            <>
-                                <FAQ faqs={blog.faqs || []} />
-                                <div className="text-center mt-6">
-                                    <button
-                                        onClick={handleGenerateMoreFaqs}
-                                        disabled={isGeneratingMoreFaqs}
-                                        className="bg-black text-white font-roboto font-bold py-2 px-5 sm:py-2 sm:px-6 rounded-full hover:bg-gray-800 transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed text-sm sm:text-base"
-                                    >
-                                        {isGeneratingMoreFaqs ? 'Generating...' : 'Generate More FAQs'}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                        {activeTab === 'moments' && <ContentInsights insights={blog.keyMoments || []} />}
-                        {activeTab === 'transcript' && (
-                            <div className="font-serif text-sm sm:text-base text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
-                                {blog.content}
-                            </div>
-                        )}
-                        {activeTab === 'chat' && <Chatbot title={blog.title} content={blog.content} contentType="article" />}
-                    </div>
-                </div>
+                <h1 className="font-montserrat text-3xl sm:text-4xl font-black text-gray-900 mb-3">{blog.title}</h1>
+                <div 
+                  className="prose lg:prose-xl max-w-none font-roboto text-gray-800"
+                  dangerouslySetInnerHTML={{ __html: blog.content }}
+                />
+              </div>
             </div>
+            <div className="lg:col-span-1 space-y-8">
+              {blog.insights && <ContentInsights insights={blog.insights} />}
+              <Chatbot blogId={id!} />
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </>
+  );
 };
 
 export default BlogDetailPage;

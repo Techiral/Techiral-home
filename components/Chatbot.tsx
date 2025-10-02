@@ -51,13 +51,10 @@ ${content}
                 content: msg.text
             }));
 
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const response = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${import.meta.env.VITE_API_KEY}`,
                     'Content-Type': 'application/json',
-                    'HTTP-Referer': `https://techiral.com`, 
-                    'X-Title': `Techiral AI`,
                 },
                 body: JSON.stringify({
                     model: 'x-ai/grok-4-fast:free',
