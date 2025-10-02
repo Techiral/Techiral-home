@@ -1,4 +1,4 @@
-import { createClient } from '@vercel/kv';
+import { supabase } from '../lib/supabaseClient';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -15,41 +15,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // Check for environment variables
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-    console.error('Missing Vercel KV environment variables');
-    return res.status(500).json({ error: 'Server configuration error: Missing database credentials.' });
-  }
-
   try {
-    const kv = createClient({
-      url: process.env.KV_REST_API_URL,
-      token: process.env.KV_REST_API_TOKEN,
-    });
+    const { data, error } = await supabase
+      .from('videos')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    const videoIds = await kv.zrange('videos:chronological', 0, -1, { rev: true });
-
-    if (!videoIds || videoIds.length === 0) {
-      return res.status(200).json([]);
+    if (error) {
+      throw error;
     }
 
-    const pipeline = kv.pipeline();
-    videoIds.forEach(id => {
-      if (id) { // Ensure id is not null/undefined
-          pipeline.hgetall(`video:${id}`);
-      }
-    });
-    const results = await pipeline.exec();
-
-    // Filter out any null results which can happen if a video hash is missing
-    const validResults = results.filter(result => result !== null);
-
-    res.status(200).json(validResults);
+    res.status(200).json(data);
   } catch (error: any) {
-    console.error('Error in /api/videos:', error);
+    console.error('Error fetching videos from Supabase:', error);
     res.status(500).json({
-        error: 'Failed to fetch videos from the database.',
-        details: error.message
+      error: 'Failed to fetch videos.',
+      details: error.message,
     });
   }
 }
