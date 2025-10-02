@@ -25,6 +25,25 @@ export const useVideoData = () => {
     fetchVideos();
   }, [fetchVideos]);
 
+  const fetchVideoById = useCallback(async (id: string): Promise<Video | null> => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/videos/${id}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`Failed to fetch video with id ${id}`);
+      }
+      return await response.json();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const generateVideoMetadata = useCallback(async (newVideoData: { id: string; title: string; transcript: string }) => {
     try {
       const prompt = `You are an expert technical writer and content strategist for the YouTube channel 'Techiral'. Your task is to analyze a video transcript and generate a comprehensive set of metadata to enhance its presentation and discoverability. Your knowledge is strictly limited to the provided transcript.
@@ -105,5 +124,5 @@ ${newVideoData.transcript}
     }
   }, []);
 
-  return { videos, loading, error, fetchVideos, generateVideoMetadata };
+  return { videos, loading, error, fetchVideos, fetchVideoById, generateVideoMetadata };
 };
