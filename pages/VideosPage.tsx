@@ -14,7 +14,7 @@ const VideoCard: React.FC<{ video: Video }> = ({ video }) => {
       className="group block p-6 bg-gray-50 hover:bg-white border border-gray-200 hover:shadow-md rounded-lg transition-all duration-300"
     >
       <div className="flex items-start space-x-4">
-        <img src={thumbnailUrl} alt={video.title} className="w-32 h-18 rounded" />
+        <img src={thumbnailUrl} alt={video.title} className="w-48 rounded object-cover aspect-video" />
         <div>
             <h3 className="font-montserrat text-xl font-black text-black mb-2 group-hover:text-gray-600">{video.title}</h3>
             <p className="font-roboto text-gray-700 text-sm overflow-hidden line-clamp-2">{descriptionText}</p>
