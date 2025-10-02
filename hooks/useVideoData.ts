@@ -1,21 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Video } from '../types';
-import { supabase } from '../lib/supabaseClient';
 
 export const useVideoData = () => {
   const [videos, setVideos] = useState<Video[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchVideos = useCallback(async () => {
     try {
-      // Order by creation time to show newest videos first
-      const { data, error } = await supabase.from('videos').select('*').order('created_at', { ascending: false });
-      if (error) {
-        throw error;
+      const response = await fetch('/api/videos');
+      if (!response.ok) {
+        throw new Error('Failed to fetch videos');
       }
-      setVideos(data || []);
-    } catch (error) {
-      console.error('Failed to load videos from Supabase:', error);
-      alert('Failed to load videos.');
+      const data = await response.json();
+      setVideos(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -23,152 +25,85 @@ export const useVideoData = () => {
     fetchVideos();
   }, [fetchVideos]);
 
-  const addVideo = useCallback(async (newVideoData: Pick<Video, 'id' | 'title' | 'transcript'>): Promise<boolean> => {
-    if (!newVideoData.id || !newVideoData.title || !newVideoData.transcript) {
-        alert("Video ID, Title, and Transcript are required.");
-        return false;
-    }
-
-    const { data: existingVideos, error: fetchError } = await supabase
-      .from('videos')
-      .select('id')
-      .eq('id', newVideoData.id);
-
-    if (fetchError) {
-      console.error('Error checking for existing video:', fetchError);
-      alert('Error checking for existing video.');
-      return false;
-    }
-      
-    if (existingVideos && existingVideos.length > 0) {
-        alert("A video with this ID already exists.");
-        return false;
-    }
-
+  const generateVideoMetadata = useCallback(async (newVideoData: { id: string; title: string; transcript: string }) => {
     try {
-        const prompt = `You are an expert technical writer and content strategist for the YouTube channel 'Techiral'. Your task is to analyze a video transcript and generate a comprehensive set of metadata to enhance its presentation and discoverability. Your knowledge is strictly limited to the provided transcript.\n\nBased on the following video title and transcript, perform these four tasks:\n\n1.  **Generate Description:** Write an engaging, one-paragraph summary for the \"About this video\" section. It should hook the reader, explain the problem the video solves, and highlight the key takeaways or methods taught.\n\n2.  **Generate FAQs:** Create a list of 3-5 insightful FAQs that a curious developer might ask after watching. Questions should address potential ambiguities or explore related concepts mentioned in the video. Answers must be detailed, practical, and directly supported by the transcript.\n\n3.  **Identify Key Moments:** Identify the most crucial segments. For each, provide the exact timestamp (e.g., \"(1:40)\") and a concise, action-oriented summary that clearly states the main point or takeaway of that segment.\n\n4.  **Generate SEO Metadata:**\n    - metaTitle: A compelling title under 60 characters that is descriptive and highly clickable.\n    - metaDescription: An enticing summary under 160 characters that encourages users to click through from a search engine results page.\n\nReturn ONLY a single, valid JSON object with five top-level keys: \"description\", \"faqs\", \"keyMoments\", \"metaTitle\", and \"metaDescription\". The structure must be:\n{\n  \"description\": \"string\",\n  \"faqs\": [{ \"question\": \"string\", \"answer\": \"string\" }],\n  \"keyMoments\": [{ \"label\": \"string\", \"summary\": \"string\" }],\n  \"metaTitle\": \"string\",\n  \"metaDescription\": \"string\"\n}\n\nVideo Title: \"${newVideoData.title}\"\n\nTranscript:\n---\n${newVideoData.transcript}\n---\n`;
+      const prompt = `You are an expert technical writer and content strategist for the YouTube channel 'Techiral'. Your task is to analyze a video transcript and generate a comprehensive set of metadata to enhance its presentation and discoverability. Your knowledge is strictly limited to the provided transcript.
 
-        const response = await fetch('/api/proxy', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'x-ai/grok-4-fast:free',
-                messages: [{ role: 'user', content: prompt }]
-            })
-        });
+Based on the following video title and transcript, perform these five tasks:
 
-        if (!response.ok) {
-            throw new Error(`AI API request failed with status ${response.status}`);
-        }
+1.  **Generate Scannable Summary:** Convert the video's description into a bulleted list. Each bullet point should be a concise, benefit-oriented sentence starting with a bolded keyword (e.g., "**Craft** viral CGI ads...").
 
-        const data = await response.json();
-        const jsonContent = data.choices[0].message.content;
-        const extractJsonString = (str: string): string | null => {
-            const match = str.match(/\{[\s\S]*\}/);
-            return match ? match[0] : null;
-        };
+2.  **Identify Target Audience:** Write a short, explicit sub-heading identifying the intended audience (e.g., "A step-by-step guide for solopreneurs and indie creators.").
 
-        const extractedJsonStr = extractJsonString(jsonContent);
-        if (!extractedJsonStr) {
-            throw new Error("AI response did not contain valid JSON.");
-        }
+3.  **Generate FAQs:** Create a list of 3-5 insightful FAQs that a curious developer might ask. Answers must be detailed and directly supported by the transcript.
 
-        const { description, faqs, keyMoments, metaTitle, metaDescription } = JSON.parse(extractedJsonStr);
-        if (!description || !faqs || !keyMoments || !metaTitle || !metaDescription) {
-            throw new Error("AI returned incomplete data.");
-        }
+4.  **Identify Key Moments:** Identify the most crucial segments. For each, provide the exact timestamp (e.g., "(1:40)") and a concise, action-oriented summary.
 
-        const completeVideo: Omit<Video, 'created_at'> = {
-            ...newVideoData,
-            description,
-            faqs,
-            keyMoments,
-            metaTitle,
-            metaDescription,
-        };
+5.  **Generate SEO Metadata & CTA:**
+    *   metaTitle: A compelling title under 60 characters.
+    *   metaDescription: An enticing summary under 160 characters.
+    *   ctaHeadline: A clear, unmistakable call-to-action headline for acquiring resources.
+    *   ctaDescription: A short description of what the user will get (e.g., "prompt list," "checklist").
 
-        const { data: insertedVideo, error: insertError } = await supabase
-            .from('videos')
-            .insert([completeVideo])
-            .select()
-            .single();
+Return ONLY a single, valid JSON object with seven top-level keys: "description", "targetAudience", "faqs", "keyMoments", "metaTitle", "metaDescription", "cta". The structure must be:
+{
+  "description": ["string"],
+  "targetAudience": "string",
+  "faqs": [{ "question": "string", "answer": "string" }],
+  "keyMoments": [{ "label": "string", "summary": "string" }],
+  "metaTitle": "string",
+  "metaDescription": "string",
+  "cta": { "headline": "string", "description": "string" }
+}
 
-        if (insertError) {
-            throw insertError;
-        }
+Video Title: "${newVideoData.title}"
 
-        if (insertedVideo) {
-            setVideos(prevVideos => [insertedVideo, ...prevVideos]);
-            alert("Video added successfully! Content generated.");
-            return true;
-        } else {
-            throw new Error("Insert did not return the new video.");
-        }
+Transcript:
+---
+${newVideoData.transcript}
+---
+`;
 
-    } catch (error: any) {
-        console.error('Failed to add video:', error);
-        alert(`Failed to add video: ${error.message}`);
-        return false;
-    }
-  }, [fetchVideos]);
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
 
-  const updateVideo = useCallback(async (videoId: string, updatedVideoData: Partial<Video>): Promise<boolean> => {
-    try {
-      const { data: updatedVideo, error } = await supabase
-        .from('videos')
-        .update(updatedVideoData)
-        .eq('id', videoId)
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to generate metadata');
       }
 
-      if (updatedVideo) {
-        setVideos(prevVideos =>
-          prevVideos.map(video => (video.id === videoId ? updatedVideo : video))
-        );
-        alert('Video updated successfully!');
-        return true;
-      } else {
-        throw new Error("Update did not return the updated video.");
-      }
-    } catch (error: any) {
-      console.error('Failed to update video:', error);
-      alert(`Failed to update video: ${error.message}`);
-      return false;
+      const data = await response.json();
+      const parsedData = JSON.parse(data.response);
+
+      const updatedVideo: Video = {
+        id: newVideoData.id,
+        title: newVideoData.title,
+        transcript: newVideoData.transcript,
+        ...parsedData,
+        created_at: new Date().toISOString(),
+      };
+
+      await fetch(`/api/videos/${newVideoData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedVideo),
+      });
+
+      setVideos(prev => prev.map(v => v.id === newVideoData.id ? updatedVideo : v));
+      return updatedVideo;
+
+    } catch (err) {
+      console.error("Error generating or saving metadata:", err);
+      setError(err instanceof Error ? err.message : String(err));
+      return null;
     }
   }, []);
 
-  const deleteVideo = useCallback(async (videoId: string): Promise<boolean> => {
-    if (window.confirm('Are you sure you want to delete this video?')) {
-      try {
-        const { error, count } = await supabase.from('videos').delete({ count: 'exact' }).eq('id', videoId);
-
-        if (error) {
-          throw error;
-        }
-
-        if (count && count > 0) {
-          setVideos(prevVideos => prevVideos.filter(video => video.id !== videoId));
-          alert('Video deleted successfully!');
-          return true;
-        } else {
-          alert('Could not delete the video. It may have been already removed.');
-          fetchVideos(); // Re-sync state
-          return false;
-        }
-      } catch (error: any) {
-        console.error('Failed to delete video:', error);
-        alert(`Failed to delete video: ${error.message}`);
-        return false;
-      }
-    }
-    return false;
-  }, [fetchVideos]);
-
-  return { videos, addVideo, updateVideo, deleteVideo };
+  return { videos, loading, error, fetchVideos, generateVideoMetadata };
 };
