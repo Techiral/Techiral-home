@@ -33,6 +33,7 @@ export interface Blog {
   mediumUrl: string;
   title: string;
   description: string;
+  thumbnailUrl?: string;
   content: string; // The full blog post content
   faqs: FAQItem[];
   keyMoments: ContentInsight[];

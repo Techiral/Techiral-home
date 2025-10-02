@@ -4,14 +4,20 @@ import { useVideoData } from '../hooks/useVideoData';
 import type { Video } from '../types';
 
 const VideoCard: React.FC<{ video: Video }> = ({ video }) => {
+  const thumbnailUrl = `https://img.youtube.com/vi/${video.id}/0.jpg`;
   return (
     // Use Link instead of anchor tag
     <Link 
       to={`/videos/${video.id}`} 
       className="group block p-6 bg-gray-50 hover:bg-white border border-gray-200 hover:shadow-md rounded-lg transition-all duration-300"
     >
-        <h3 className="font-montserrat text-xl font-black text-black mb-2 group-hover:text-gray-600">{video.title}</h3>
-        <p className="font-roboto text-gray-700 text-sm overflow-hidden line-clamp-2">{video.description}</p>
+      <div className="flex items-start space-x-4">
+        <img src={thumbnailUrl} alt={video.title} className="w-32 h-20 object-cover rounded" />
+        <div>
+            <h3 className="font-montserrat text-xl font-black text-black mb-2 group-hover:text-gray-600">{video.title}</h3>
+            <p className="font-roboto text-gray-700 text-sm overflow-hidden line-clamp-2">{video.description}</p>
+        </div>
+      </div>
     </Link>
   );
 };
