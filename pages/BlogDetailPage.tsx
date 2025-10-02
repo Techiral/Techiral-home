@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom'; // Import useParams
 import { useBlogData } from '../hooks/useBlogData';
 import type { Blog, FAQItem } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -6,7 +7,9 @@ import FAQ from '../components/FAQ';
 import Chatbot from '../components/Chatbot';
 import ContentInsights from '../components/ContentInsights';
 
-const BlogDetailPage: React.FC<{ blogId: string }> = ({ blogId }) => {
+// The component no longer needs to accept a blogId prop
+const BlogDetailPage: React.FC = () => {
+    const { id: blogId } = useParams<{ id: string }>(); // Get blog ID from URL
     const { fetchBlogById, updateBlog } = useBlogData();
     const [blog, setBlog] = useState<Blog | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -15,6 +18,12 @@ const BlogDetailPage: React.FC<{ blogId: string }> = ({ blogId }) => {
     const [isGeneratingMoreFaqs, setIsGeneratingMoreFaqs] = useState<boolean>(false);
 
     const loadBlog = useCallback(async () => {
+        if (!blogId) {
+            setError('No blog ID provided in the URL.');
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
         try {
@@ -32,6 +41,7 @@ const BlogDetailPage: React.FC<{ blogId: string }> = ({ blogId }) => {
     }, [blogId, fetchBlogById]);
 
     useEffect(() => {
+        // This effect will now re-run whenever the blogId from the URL changes
         loadBlog();
     }, [loadBlog]);
 
@@ -72,19 +82,7 @@ const BlogDetailPage: React.FC<{ blogId: string }> = ({ blogId }) => {
         const existingQuestions = (blog.faqs || []).map(faq => `- ${faq.question}`).join('\n');
 
         try {
-             const prompt = `You are an expert AI assistant for the YouTube channel 'Techiral'. Your task is to generate 3 new and insightful FAQs based on the provided blog article content.
-
-These questions must be substantively different from the existing ones provided below. Your knowledge is strictly limited to the article content. Answers should be practical and directly cite information from the article.
-
-Blog Title: "${blog.title}"
-
-Existing Questions (Do NOT repeat these):
-${existingQuestions}
-
-Article Content:
----
-${blog.content}
----
+             const prompt = `You are an expert AI assistant for the YouTube channel 'Techiral'. Your task is to generate 3 new and insightful FAQs based on the provided blog article content.\n\nThese questions must be substantively different from the existing ones provided below. Your knowledge is strictly limited to the article content. Answers should be practical and directly cite information from the article.\n\nBlog Title: "${blog.title}"\n\nExisting Questions (Do NOT repeat these):\n${existingQuestions}\n\nArticle Content:\n---\n${blog.content}\n---
 
 Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of objects, where each object has "question" and "answer" string keys. Do not include any introductory text or markdown formatting.`;
             
@@ -144,7 +142,7 @@ Generate exactly 3 new, unique FAQs. Return ONLY a single, valid JSON array of o
 
     if (isLoading) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold p-8">{error}</div>;
-    if (!blog) return null; // Should ideally not be reached if error is handled
+    if (!blog) return null;
 
     return (
         <div className="bg-white text-black py-16 md:py-24 px-6">
