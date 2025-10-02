@@ -30,7 +30,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/chat', {
+            const response = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

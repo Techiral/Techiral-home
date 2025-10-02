@@ -1,22 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom'; // Import Link
+import { Link } from 'react-router-dom';
 import { useVideoData } from '../hooks/useVideoData';
 import type { Video } from '../types';
 import Seo from '../components/Seo';
 
 const VideoCard: React.FC<{ video: Video }> = ({ video }) => {
-  const thumbnailUrl = `https://img.youtube.com/vi/${video.id}/0.jpg`;
+  const thumbnailUrl = `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`;
+  const descriptionText = Array.isArray(video.description) ? video.description.join(' ') : video.description;
+
   return (
-    // Use Link instead of anchor tag
     <Link 
       to={`/videos/${video.id}`} 
       className="group block p-6 bg-gray-50 hover:bg-white border border-gray-200 hover:shadow-md rounded-lg transition-all duration-300"
     >
       <div className="flex items-start space-x-4">
-        <img src={thumbnailUrl} alt={video.title} className="w-32 h-20 object-cover rounded" />
+        <img src={thumbnailUrl} alt={video.title} className="w-32 h-18 rounded" />
         <div>
             <h3 className="font-montserrat text-xl font-black text-black mb-2 group-hover:text-gray-600">{video.title}</h3>
-            <p className="font-roboto text-gray-700 text-sm overflow-hidden line-clamp-2">{video.description}</p>
+            <p className="font-roboto text-gray-700 text-sm overflow-hidden line-clamp-2">{descriptionText}</p>
         </div>
       </div>
     </Link>
@@ -29,10 +30,11 @@ const VideosPage: React.FC = () => {
 
     const filteredVideos = useMemo(() => {
         if (!searchTerm) return videos;
-        return videos.filter(video => 
-            video.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            video.description.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        return videos.filter(video => {
+            const descriptionText = Array.isArray(video.description) ? video.description.join(' ') : video.description;
+            return video.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                   descriptionText.toLowerCase().includes(searchTerm.toLowerCase())
+        });
     }, [videos, searchTerm]);
 
   return (
