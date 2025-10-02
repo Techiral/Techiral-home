@@ -3,30 +3,24 @@ import { useParams } from 'react-router-dom';
 import { useVideoData } from '../hooks/useVideoData';
 import Chatbot from '../components/Chatbot';
 import KeyMoments from '../components/KeyMoments';
-import ContentInsights from '../components/ContentInsights'; // This component will receive faqs
+import ContentInsights from '../components/ContentInsights';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Seo from '../components/Seo';
-import type { Video } from '../types'; // Import the Video type
+import type { Video } from '../types';
 
 const VideoDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  // The 'videos' array from this hook contains all the data we need.
   const { videos, loading } = useVideoData();
-
-  // Find the specific video from the array.
   const currentVideo = videos.find(v => v.id === id);
 
-  // Show a loading spinner while the videos are being fetched.
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
   }
 
-  // If the video is not found after loading, show an error message.
   if (!currentVideo) {
     return <div className="min-h-screen flex items-center justify-center text-red-500">Video not found.</div>;
   }
 
-  // The 'faqs' from the video data will be used as 'insights'.
   const insights = currentVideo.faqs;
 
   const jsonLd = {
@@ -35,7 +29,7 @@ const VideoDetailPage: React.FC = () => {
     name: currentVideo.title,
     description: currentVideo.description,
     thumbnailUrl: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`,
-    uploadDate: currentVideo.created_at, // Use the created_at field
+    uploadDate: currentVideo.created_at,
     contentUrl: `https://www.youtube.com/watch?v=${id}`,
     embedUrl: `https://www.youtube.com/embed/${id}`,
   };
@@ -61,14 +55,15 @@ const VideoDetailPage: React.FC = () => {
                 ></iframe>
               </div>
               <div className="mb-8">
-                <h1 className="font-montserrat text-3xl sm:text-4xl font-black text-gray-900 mb-3">{currentVideo.title}</h1>
-                <p className="font-roboto text-gray-600 text-base">{currentVideo.description}</p>
+                <h1 className="font-montserrat text-3xl sm:text-4xl font-black text-gray-900 mb-4">{currentVideo.title}</h1>
+                <div 
+                  className="prose prose-lg max-w-none text-gray-800 font-roboto"
+                  dangerouslySetInnerHTML={{ __html: currentVideo.description }}
+                />
               </div>
-              {/* Use the keyMoments from the Supabase data */}
               {currentVideo.keyMoments && <KeyMoments moments={currentVideo.keyMoments} />}
             </div>
             <div className="lg:col-span-1 space-y-8">
-              {/* Use the faqs from the Supabase data as insights */}
               {insights && <ContentInsights insights={insights} />}
               <Chatbot videoId={id!} />
             </div>
