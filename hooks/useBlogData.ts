@@ -29,7 +29,7 @@ export const useBlogData = () => {
     fetchBlogs();
   }, []);
 
-  const addBlog = useCallback(async (newBlogData: Pick<Blog, 'mediumUrl' | 'title' | 'content'>): Promise<boolean> => {
+  const addBlog = useCallback(async (newBlogData: Pick<Blog, 'mediumUrl' | 'title' | 'content' | 'thumbnailUrl'>): Promise<boolean> => {
     if (!newBlogData.mediumUrl || !newBlogData.title || !newBlogData.content) {
         alert("Medium URL, Title, and Content are required.");
         return false;
@@ -112,7 +112,7 @@ export const useBlogData = () => {
     }
   }, []);
 
-  const updateBlog = useCallback(async (blogId: string, updatedBlogData: Blog) => {
+ const updateBlog = useCallback(async (blogId: string, updatedBlogData: Blog): Promise<boolean> => {
     try {
       const { error } = await supabase.from('blogs').update(updatedBlogData).eq('id', blogId);
       if (error) {
@@ -121,6 +121,7 @@ export const useBlogData = () => {
       setBlogs(prevBlogs =>
         prevBlogs.map(blog => (blog.id === blogId ? updatedBlogData : blog))
       );
+      alert('Blog updated successfully!');
       return true;
     } catch (error) {
       console.error('Failed to update blog:', error);
@@ -137,6 +138,7 @@ export const useBlogData = () => {
           throw error;
         }
         setBlogs(prevBlogs => prevBlogs.filter(blog => blog.id !== blogId));
+        alert('Blog deleted successfully!');
       } catch (error) {
         console.error('Failed to delete blog:', error);
         alert('Failed to delete blog.');

@@ -19,7 +19,7 @@ const AdminPage: React.FC = () => {
     const [isEditingVideo, setIsEditingVideo] = useState(false);
     
     // State for blog form
-    const initialBlogFormState: Blog = { id: '', mediumUrl: '', title: '', description: '', content: '', faqs: [], keyMoments: [], metaTitle: '', metaDescription: '' };
+    const initialBlogFormState: Blog = { id: '', mediumUrl: '', title: '', description: '', content: '', faqs: [], keyMoments: [], metaTitle: '', metaDescription: '', thumbnailUrl: '' };
     const [blogFormState, setBlogFormState] = useState<Blog>(initialBlogFormState);
     const [isEditingBlog, setIsEditingBlog] = useState(false);
 
@@ -87,7 +87,6 @@ const AdminPage: React.FC = () => {
         if (isEditingVideo) {
             const videoToUpdate = { ...videoFormState, faqs: videoFormState.faqs || [], keyMoments: videoFormState.keyMoments || [] };
             success = updateVideo(videoToUpdate.id, videoToUpdate);
-            if (success) alert("Video updated successfully!");
         } else {
             const { id, title, transcript } = videoFormState;
             success = await addVideo({ id, title, transcript });
@@ -123,11 +122,10 @@ const AdminPage: React.FC = () => {
         let success = false;
         if (isEditingBlog) {
             const blogToUpdate = { ...blogFormState, faqs: blogFormState.faqs || [], keyMoments: blogFormState.keyMoments || [] };
-            success = updateBlog(blogToUpdate.id, blogToUpdate);
-            if (success) alert("Blog updated successfully!");
+            success = await updateBlog(blogToUpdate.id, blogToUpdate);
         } else {
-            const { mediumUrl, title, content } = blogFormState;
-            success = await addBlog({ mediumUrl, title, content });
+            const { mediumUrl, title, content, thumbnailUrl } = blogFormState;
+            success = await addBlog({ mediumUrl, title, content, thumbnailUrl });
         }
         if (success) resetBlogForm();
         setIsSubmitting(false);
@@ -247,6 +245,12 @@ const AdminPage: React.FC = () => {
                                 <label htmlFor="blog-title" className="block font-roboto font-bold mb-1">Title</label>
                                 <input type="text" id="blog-title" name="title" value={blogFormState.title} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required disabled={isEditingBlog} />
                             </div>
+                            {isEditingBlog && (
+                                <div>
+                                    <label htmlFor="blog-thumbnailUrl" className="block font-roboto font-bold mb-1">Thumbnail URL</label>
+                                    <input type="text" id="blog-thumbnailUrl" name="thumbnailUrl" value={blogFormState.thumbnailUrl || ''} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                </div>
+                            )}
                             {isEditingBlog && (
                                 <div>
                                     <label htmlFor="blog-description" className="block font-roboto font-bold mb-1">Description</label>
