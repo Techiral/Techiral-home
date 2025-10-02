@@ -21,8 +21,6 @@ const VideoDetailPage: React.FC = () => {
     return <div className="min-h-screen flex items-center justify-center text-red-500">Video not found.</div>;
   }
 
-  const insights = currentVideo.faqs;
-
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'VideoObject',
@@ -41,31 +39,36 @@ const VideoDetailPage: React.FC = () => {
         description={currentVideo.metaDescription || currentVideo.description}
         jsonLd={jsonLd}
       />
-      <div className="bg-white text-black min-h-screen">
+      <div className="bg-white text-black min-h-screen font-roboto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-12 gap-y-8">
             <div className="lg:col-span-2">
               <div className="aspect-w-16 aspect-h-9 mb-6">
                 <iframe
-                  className="w-full h-full rounded-lg shadow-xl"
+                  className="w-full h-full rounded-lg"
                   src={`https://www.youtube.com/embed/${id}`}
                   title={currentVideo.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 ></iframe>
               </div>
-              <div className="mb-8">
-                <h1 className="font-montserrat text-3xl sm:text-4xl font-black text-gray-900 mb-4">{currentVideo.title}</h1>
-                <div 
-                  className="prose prose-lg max-w-none text-gray-800 font-roboto"
-                  dangerouslySetInnerHTML={{ __html: currentVideo.description }}
-                />
+              <div className="space-y-12">
+                <div>
+                  <h1 className="font-montserrat text-4xl font-black text-gray-900 mb-4">{currentVideo.title}</h1>
+                  <div className="prose prose-lg max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: currentVideo.description }} />
+                </div>
+                {currentVideo.keyMoments && currentVideo.keyMoments.length > 0 && (
+                    <KeyMoments moments={currentVideo.keyMoments} />
+                )}
+                 {currentVideo.faqs && currentVideo.faqs.length > 0 && (
+                    <ContentInsights insights={currentVideo.faqs} />
+                )}
               </div>
-              {currentVideo.keyMoments && <KeyMoments moments={currentVideo.keyMoments} />}
             </div>
-            <div className="lg:col-span-1 space-y-8">
-              {insights && <ContentInsights insights={insights} />}
-              <Chatbot videoId={id!} />
+            <div className="lg:col-span-1">
+              <div className="sticky top-24">
+                <Chatbot videoId={id!} />
+              </div>
             </div>
           </div>
         </div>

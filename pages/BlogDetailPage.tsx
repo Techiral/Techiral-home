@@ -20,8 +20,6 @@ const BlogDetailPage: React.FC = () => {
     return <div className="min-h-screen flex items-center justify-center text-red-500">Blog not found.</div>;
   }
 
-  const insights = currentBlog.faqs;
-
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -54,28 +52,33 @@ const BlogDetailPage: React.FC = () => {
         description={currentBlog.metaDescription || currentBlog.description}
         jsonLd={jsonLd}
       />
-      <div className="bg-white text-black min-h-screen">
+      <div className="bg-white text-black min-h-screen font-roboto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-12 gap-y-8">
             <div className="lg:col-span-2">
-              <div className="bg-gray-50 p-6 sm:p-8 rounded-lg shadow-md">
-                {currentBlog.thumbnailUrl &&
-                  <img
-                    src={currentBlog.thumbnailUrl}
-                    alt={currentBlog.title}
-                    className="w-full h-auto rounded-lg shadow-xl mb-8"
-                  />
-                }
-                <h1 className="font-montserrat text-3xl sm:text-4xl font-black text-gray-900 mb-4">{currentBlog.title}</h1>
-                <div
-                  className="prose prose-lg max-w-none text-gray-800 font-roboto"
-                  dangerouslySetInnerHTML={{ __html: currentBlog.content }}
-                />
+              <div className="space-y-12">
+                <div>
+                    {currentBlog.thumbnailUrl &&
+                        <div className="mb-6">
+                        <img
+                            src={currentBlog.thumbnailUrl}
+                            alt={currentBlog.title}
+                            className="w-full h-auto rounded-lg"
+                        />
+                        </div>
+                    }
+                  <h1 className="font-montserrat text-4xl font-black text-gray-900 mb-4">{currentBlog.title}</h1>
+                  <div className="prose prose-lg max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: currentBlog.content }} />
+                </div>
+                {currentBlog.faqs && currentBlog.faqs.length > 0 && (
+                    <ContentInsights insights={currentBlog.faqs} />
+                )}
               </div>
             </div>
-            <div className="lg:col-span-1 space-y-8">
-              {insights && <ContentInsights insights={insights} />}
-              <Chatbot blogId={id!} />
+            <div className="lg:col-span-1">
+              <div className="sticky top-24">
+                <Chatbot blogId={id!} />
+              </div>
             </div>
           </div>
         </div>
