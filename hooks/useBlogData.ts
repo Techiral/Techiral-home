@@ -13,21 +13,22 @@ const createSlug = (title: string) => {
 export const useBlogData = () => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
 
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const { data, error } = await supabase.from('blogs').select('*');
-        if (error) {
-          throw error;
-        }
-        setBlogs(data || []);
-      } catch (error) {
-        console.error('Failed to load blogs from Supabase:', error);
+  const fetchBlogs = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('blogs').select('*').order('created_at', { ascending: false });
+      if (error) {
+        throw error;
       }
-    };
-
-    fetchBlogs();
+      setBlogs(data || []);
+    } catch (error) {
+      console.error('Failed to load blogs from Supabase:', error);
+      alert('Failed to load blogs.');
+    }
   }, []);
+
+  useEffect(() => {
+    fetchBlogs();
+  }, [fetchBlogs]);
 
   const addBlog = useCallback(async (newBlogData: Pick<Blog, 'mediumUrl' | 'title' | 'content' | 'thumbnailUrl'>): Promise<boolean> => {
     if (!newBlogData.mediumUrl || !newBlogData.title || !newBlogData.content) {
@@ -35,6 +36,8 @@ export const useBlogData = () => {
         return false;
     }
     const slug = createSlug(newBlogData.title);
+    
+    // Check if blog with same slug exists
     const { data: existingBlogs, error: fetchError } = await supabase
       .from('blogs')
       .select('id')
@@ -86,7 +89,7 @@ export const useBlogData = () => {
             throw new Error("AI returned incomplete data.");
         }
 
-        const completeBlog: Blog = {
+        const completeBlog: Omit<Blog, 'created_at'> = { // The database will set created_at
             ...newBlogData,
             id: slug,
             description,
@@ -96,36 +99,56 @@ export const useBlogData = () => {
             metaDescription,
         };
 
-        const { error: insertError } = await supabase.from('blogs').insert([completeBlog]);
+        const { data: insertedBlog, error: insertError } = await supabase
+          .from('blogs')
+          .insert([completeBlog])
+          .select()
+          .single(); // We expect a single object back
+
         if (insertError) {
           throw insertError;
         }
 
-        setBlogs(prevBlogs => [...prevBlogs, completeBlog]);
-        alert("Blog added successfully! All content was generated automatically.");
-        return true;
+        if (insertedBlog) {
+            setBlogs(prevBlogs => [insertedBlog, ...prevBlogs]);
+            alert("Blog added successfully! All content was generated automatically.");
+            return true;
+        } else {
+            throw new Error("Insert operation did not return the new blog post.");
+        }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to add blog:', error);
-        alert("An unexpected error occurred while generating blog content. Please check the console and try again.");
+        alert(`An unexpected error occurred while adding the blog: ${error.message}`);
         return false;
     }
-  }, []);
+  }, [fetchBlogs]);
 
- const updateBlog = useCallback(async (blogId: string, updatedBlogData: Blog): Promise<boolean> => {
+ const updateBlog = useCallback(async (blogId: string, updatedBlogData: Partial<Blog>): Promise<boolean> => {
     try {
-      const { error } = await supabase.from('blogs').update(updatedBlogData).eq('id', blogId);
+      const { data: updatedBlog, error } = await supabase
+        .from('blogs')
+        .update(updatedBlogData)
+        .eq('id', blogId)
+        .select()
+        .single();
+
       if (error) {
         throw error;
       }
-      setBlogs(prevBlogs =>
-        prevBlogs.map(blog => (blog.id === blogId ? updatedBlogData : blog))
-      );
-      alert('Blog updated successfully!');
-      return true;
-    } catch (error) {
+      
+      if (updatedBlog) {
+          setBlogs(prevBlogs =>
+            prevBlogs.map(blog => (blog.id === blogId ? updatedBlog : blog))
+          );
+          alert('Blog updated successfully!');
+          return true;
+      } else {
+        throw new Error("Update operation did not return the updated blog post.");
+      }
+    } catch (error: any) {
       console.error('Failed to update blog:', error);
-      alert('Failed to update blog.');
+      alert(`Failed to update blog: ${error.message}`);
       return false;
     }
   }, []);
@@ -133,21 +156,31 @@ export const useBlogData = () => {
   const deleteBlog = useCallback(async (blogId: string): Promise<boolean> => {
     if (window.confirm('Are you sure you want to delete this blog post?')) {
       try {
-        const { error } = await supabase.from('blogs').delete().eq('id', blogId);
+        const { error, count } = await supabase.from('blogs').delete({ count: 'exact' }).eq('id', blogId);
+
         if (error) {
           throw error;
         }
-        setBlogs(prevBlogs => prevBlogs.filter(blog => blog.id !== blogId));
-        alert('Blog deleted successfully!');
-        return true;
-      } catch (error) {
+
+        if (count && count > 0) {
+            setBlogs(prevBlogs => prevBlogs.filter(blog => blog.id !== blogId));
+            alert('Blog deleted successfully!');
+            return true;
+        } else {
+            // This case can happen with RLS or if the record is already deleted.
+            alert('Could not delete the blog post. It may have already been removed.');
+            // We should re-sync the state in this case.
+            fetchBlogs();
+            return false;
+        }
+      } catch (error: any) {
         console.error('Failed to delete blog:', error);
-        alert('Failed to delete blog.');
+        alert(`Failed to delete blog: ${error.message}`);
         return false;
       }
     }
     return false;
-  }, []);
+  }, [fetchBlogs]);
 
   return { blogs, addBlog, updateBlog, deleteBlog };
 };
