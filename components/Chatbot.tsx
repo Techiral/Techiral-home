@@ -36,9 +36,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    messages: updatedMessages,
-                    videoId,
-                    blogId,
+                    model: 'openrouter/auto',
+                    messages: updatedMessages.map(m => ({ role: m.role, content: m.text }))
                 })
             });
 
@@ -47,7 +46,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
             }
 
             const data = await response.json();
-            const modelMessage: ChatMessage = { role: 'model', text: data.response };
+            const modelMessage: ChatMessage = { role: 'model', text: data.choices[0].message.content };
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error) {
