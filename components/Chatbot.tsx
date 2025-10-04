@@ -36,7 +36,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    model: 'openrouter/auto',
+                    model: 'meituan/longcat-flash-chat:free',
                     messages: updatedMessages.map(m => ({
                         role: m.role === 'model' ? 'assistant' : m.role,
                         content: m.text
