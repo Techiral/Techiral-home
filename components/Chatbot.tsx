@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '../types';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -73,7 +74,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-xs md:max-w-md rounded-lg px-4 py-2 ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800'}`}>
-                            <p className="text-sm font-roboto whitespace-pre-wrap">{msg.text}</p>
+                            <div className="text-sm font-roboto whitespace-pre-wrap">
+                                <ReactMarkdown>{msg.text}</ReactMarkdown>
+                            </div>
                         </div>
                     </div>
                 ))}
