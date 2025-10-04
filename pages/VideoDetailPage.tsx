@@ -7,6 +7,7 @@ import ContentInsights from '../components/ContentInsights';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Seo from '../components/Seo';
 import type { Video } from '../types';
+import './video.css';
 
 const VideoDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,9 +60,8 @@ const VideoDetailPage: React.FC = () => {
             
           <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 text-center">{currentVideo.title}</h1>
 
-          <div className="aspect-w-16 aspect-h-9 mb-8 shadow-lg rounded-lg overflow-hidden">
+          <div className="video-container mb-8 shadow-lg rounded-lg overflow-hidden">
             <iframe
-              className="w-full h-full"
               src={`https://www.youtube.com/embed/${id}`}
               title={currentVideo.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
