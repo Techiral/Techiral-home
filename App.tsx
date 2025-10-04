@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -23,7 +24,7 @@ const MainApp: React.FC = () => {
   const { user } = useAuth();
 
   return (
-    <div className="bg-white font-roboto">
+    <div>
       <Header />
       <main>
         <Routes>

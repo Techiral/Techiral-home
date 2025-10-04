@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useVideoData } from '../hooks/useVideoData';
 import Chatbot from '../components/Chatbot';
@@ -6,98 +7,94 @@ import KeyMoments from '../components/KeyMoments';
 import ContentInsights from '../components/ContentInsights';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Seo from '../components/Seo';
-import type { Video } from '../types';
-import './video.css';
+import Tabs, { Tab } from '../components/Tabs';
 
 const VideoDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { fetchVideoById, loading } = useVideoData();
-  const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
-  const [activeTab, setActiveTab] = useState('summary');
-
-  useEffect(() => {
-    if (id) {
-      const loadVideo = async () => {
-        const video = await fetchVideoById(id);
-        setCurrentVideo(video);
-      };
-      loadVideo();
-    }
-  }, [id, fetchVideoById]);
+  const { videos, loading } = useVideoData();
+  const currentVideo = videos.find(v => v.id === id);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LoadingSpinner /></div>;
   }
 
   if (!currentVideo) {
-    return <div className="min-h-screen flex items-center justify-center text-red-500">Video not found.</div>;
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red' }}>Video not found.</div>;
   }
 
   const jsonLd = {
-      '@context': 'https://schema.org',
-      '@type': 'VideoObject',
-      name: currentVideo.title,
-      description: currentVideo.metaDescription || (Array.isArray(currentVideo.description) ? currentVideo.description.join(' ') : currentVideo.description),
-      thumbnailUrl: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`,
-      uploadDate: currentVideo.created_at,
-      contentUrl: `https://www.youtube.com/watch?v=${id}`,
-      embedUrl: `https://www.youtube.com/embed/${id}`,
-    };
-    
-    const createMarkup = (htmlContent: string | undefined) => {
-      return { __html: htmlContent || '' };
-    };
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: currentVideo.title,
+    description: Array.isArray(currentVideo.description) ? currentVideo.description.join(' ') : currentVideo.description,
+    thumbnailUrl: `https://img.youtube.com/vi/${currentVideo.id}/maxresdefault.jpg`,
+    uploadDate: currentVideo.created_at,
+    embedUrl: `https://www.youtube.com/embed/${currentVideo.id}`,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Techiral',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.techiral.com/logo.png'
+      }
+    },
+  };
 
   return (
     <>
       <Seo
-        title={currentVideo.metaTitle || `${currentVideo.title} - Techiral`}
-        description={currentVideo.metaDescription || (Array.isArray(currentVideo.description) ? currentVideo.description.join(' ') : currentVideo.description)}
+        title={`${currentVideo.title} - Techiral`}
+        description={Array.isArray(currentVideo.description) ? currentVideo.description.join(' ') : currentVideo.description}
         jsonLd={jsonLd}
       />
-      <div className="bg-white text-black min-h-screen font-sans">
-        <div className="max-w-4xl mx-auto px-4 py-12">
-            
-          <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 text-center">{currentVideo.title}</h1>
-
-          <div className="video-container mb-8 shadow-lg rounded-lg overflow-hidden">
-            <iframe
-              src={`https://www.youtube.com/embed/${id}`}
-              title={currentVideo.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">About this video</h2>
-            <div className="prose prose-lg max-w-none text-gray-600" dangerouslySetInnerHTML={createMarkup(Array.isArray(currentVideo.description) ? currentVideo.description.join(' ') : currentVideo.description)} />
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-8 text-center mb-12">
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">Ready for the Next Step?</h3>
-            <p className="text-gray-600 mb-6">If you found this helpful, join our community of creators and developers to keep the conversation going.</p>
-            <a href="#" className="bg-black text-white font-bold py-3 px-8 rounded-full hover:bg-gray-800 transition-colors">Join The Community</a>
-          </div>
-
-          <div>
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex justify-center space-x-8" aria-label="Tabs">
-                    <button onClick={() => setActiveTab('summary')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg ${activeTab === 'summary' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>AI Summary</button>
-                    <button onClick={() => setActiveTab('moments')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg ${activeTab === 'moments' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Key Moments</button>
-                    <button onClick={() => setActiveTab('transcript')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg ${activeTab === 'transcript' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Transcript</button>
-                    <button onClick={() => setActiveTab('chat')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg ${activeTab === 'chat' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>Chat</button>
-                </nav>
+      <style>
+          {`
+          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto&display=swap');
+          `}
+      </style>
+      <div style={{ backgroundColor: 'white', color: 'black', minHeight: '100vh', fontFamily: 'Roboto, sans-serif' }}>
+        <div style={{ maxWidth: '900px', margin: 'auto', padding: '48px 16px' }}>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' }}>
+                <iframe
+                src={`https://www.youtube.com/embed/${id}`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                ></iframe>
             </div>
 
-            <div className="py-8">
-                {activeTab === 'summary' && currentVideo.faqs && <ContentInsights insights={currentVideo.faqs} />}
-                {activeTab === 'moments' && currentVideo.keyMoments && <KeyMoments moments={currentVideo.keyMoments} />}
-                {activeTab === 'transcript' && <div className="prose prose-lg max-w-none text-gray-600" dangerouslySetInnerHTML={createMarkup(currentVideo.transcript)} />}
-                {activeTab === 'chat' && <Chatbot videoId={id!} />}
+            <div style={{ marginTop: '48px' }}>
+                <h1 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '2.25rem', fontWeight: 900, color: 'black', marginBottom: '8px' }}>{currentVideo.title}</h1>
+                {Array.isArray(currentVideo.description) ? (
+                <ul style={{ listStyleType: 'disc', listStylePosition: 'inside', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px', fontSize: '1.125rem', color: 'black' }}>
+                    {currentVideo.description.map((item, index) => (
+                    <li key={index}>{item}</li>
+                    ))}
+                </ul>
+                ) : (
+                <p style={{ fontSize: '1.125rem', color: 'black' }}>{currentVideo.description}</p>
+                )}
             </div>
-          </div>
 
+            <div style={{ marginTop: '48px' }}>
+                <Tabs>
+                    {currentVideo.faqs && currentVideo.faqs.length > 0 && (
+                        <Tab title="FAQ">
+                            <ContentInsights insights={currentVideo.faqs} />
+                        </Tab>
+                    )}
+                    {currentVideo.keyMoments && currentVideo.keyMoments.length > 0 && (
+                        <Tab title="Key Moments">
+                            <KeyMoments moments={currentVideo.keyMoments} />
+                        </Tab>
+                    )}
+                    <Tab title="Chat">
+                        <Chatbot videoId={id!} />
+                    </Tab>
+                </Tabs>
+            </div>
         </div>
       </div>
     </>

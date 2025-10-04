@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import type { Blog } from '../types';
 import { supabase } from '../lib/supabaseClient';
@@ -57,42 +58,7 @@ export const useBlogData = () => {
     }
 
     try {
-      const prompt = `You are an expert technical writer and content strategist for 'Techiral'. Your task is to analyze a blog post and generate a comprehensive set of metadata to enhance its presentation and discoverability. Your knowledge is strictly limited to the provided content.
-
-Based on the following blog title and content, perform these five tasks:
-
-1.  **Generate Scannable Summary:** Convert the blog's description into a bulleted list. Each bullet point should be a concise, benefit-oriented sentence starting with a bolded keyword (e.g., "**Learn** how to...").
-
-2.  **Identify Target Audience:** Write a short, explicit sub-heading identifying the intended audience (e.g., "A step-by-step guide for developers and tech enthusiasts.").
-
-3.  **Generate FAQs:** Create a list of 3-5 insightful FAQs that a curious reader might ask. Answers must be detailed and directly supported by the blog content.
-
-4.  **Identify Key Takeaways:** Identify the most crucial sections or ideas. For each, provide a short, descriptive label (e.g., "The Core Concept") and a concise summary of that idea.
-
-5.  **Generate SEO Metadata & CTA:**
-    *   metaTitle: A compelling title under 60 characters.
-    *   metaDescription: An enticing summary under 160 characters.
-    *   ctaHeadline: A clear, unmistakable call-to-action headline for acquiring related resources.
-    *   ctaDescription: A short description of what the user will get (e.g., "downloadable code snippets," "a complete project guide").
-
-Return ONLY a single, valid JSON object with seven top-level keys: "description", "targetAudience", "faqs", "keyMoments", "metaTitle", "metaDescription", and "cta". The structure must be:
-{
-  "description": ["string"],
-  "targetAudience": "string",
-  "faqs": [{ "question": "string", "answer": "string" }],
-  "keyMoments": [{ "label": "string", "summary": "string" }],
-  "metaTitle": "string",
-  "metaDescription": "string",
-  "cta": { "headline": "string", "description": "string" }
-}
-
-Blog Title: "${newBlogData.title}"
-
-Content:
----
-${newBlogData.content}
----
-`;
+      const prompt = `You are an expert technical writer and content strategist for 'Techiral'. Your task is to analyze a blog post and generate a comprehensive set of metadata to enhance its presentation and discoverability. Your knowledge is strictly limited to the provided content.\n\nBased on the following blog title and content, perform these five tasks:\n\n1.  **Generate Scannable Summary:** Convert the blog's description into a bulleted list. Each bullet point should be a concise, benefit-oriented sentence starting with a bolded keyword (e.g., "**Learn** how to...").\n\n2.  **Identify Target Audience:** Write a short, explicit sub-heading identifying the intended audience (e.g., "A step-by-step guide for developers and tech enthusiasts.").\n\n3.  **Generate FAQs:** Create a list of 3-5 insightful FAQs that a curious reader might ask. Answers must be detailed and directly supported by the blog content.\n\n4.  **Identify Key Takeaways:** Identify the most crucial sections or ideas. For each, provide a short, descriptive label (e.g., "The Core Concept") and a concise summary of that idea.\n\n5.  **Generate SEO Metadata & CTA:**\n    *   metaTitle: A compelling title under 60 characters.\n    *   metaDescription: An enticing summary under 160 characters.\n    *   ctaHeadline: A clear, unmistakable call-to-action headline for acquiring related resources.\n    *   ctaDescription: A short description of what the user will get (e.g., "downloadable code snippets," "a complete project guide").\n\nReturn ONLY a single, valid JSON object with seven top-level keys: "description", "targetAudience", "faqs", "keyMoments", "metaTitle", "metaDescription", and "cta". The structure must be:\n{\n  "description": ["string"],\n  "targetAudience": "string",\n  "faqs": [{ "question": "string", "answer": "string" }],\n  "keyMoments": [{ "label": "string", "summary": "string" }],\n  "metaTitle": "string",\n  "metaDescription": "string",\n  "cta": { "headline": "string", "description": "string" }\n}\n\nBlog Title: "${newBlogData.title}"\n\nContent:\n---\n${newBlogData.content}\n---\n`;
 
       const response = await fetch('/api/generate', { 
           method: 'POST', 
@@ -169,5 +135,45 @@ ${newBlogData.content}
     return false;
   }, [fetchBlogs]);
 
-  return { blogs, fetchBlogs, fetchBlogById, addBlog, updateBlog, deleteBlog };
+  const generateBlogMetadata = useCallback(async (blogId: string, title: string, content: string) => {
+    try {
+      const prompt = `You are an expert technical writer and content strategist for 'Techiral'. Your task is to analyze a blog post and generate a comprehensive set of metadata to enhance its presentation and discoverability. Your knowledge is strictly limited to the provided content.\n\nBased on the following blog title and content, perform these five tasks:\n\n1.  **Generate Scannable Summary:** Convert the blog's description into a bulleted list. Each bullet point should be a concise, benefit-oriented sentence starting with a bolded keyword (e.g., "**Learn** how to...").\n\n2.  **Identify Target Audience:** Write a short, explicit sub-heading identifying the intended audience (e.g., "A step-by-step guide for developers and tech enthusiasts.").\n\n3.  **Generate FAQs:** Create a list of 3-5 insightful FAQs that a curious reader might ask. Answers must be detailed and directly supported by the blog content.\n\n4.  **Identify Key Takeaways:** Identify the most crucial sections or ideas. For each, provide a short, descriptive label (e.g., "The Core Concept") and a concise summary of that idea.\n\n5.  **Generate SEO Metadata & CTA:**\n    *   metaTitle: A compelling title under 60 characters.\n    *   metaDescription: An enticing summary under 160 characters.\n    *   ctaHeadline: A clear, unmistakable call-to-action headline for acquiring related resources.\n    *   ctaDescription: A short description of what the user will get (e.g., "downloadable code snippets," "a complete project guide").\n\nReturn ONLY a single, valid JSON object with seven top-level keys: "description", "targetAudience", "faqs", "keyMoments", "metaTitle", "metaDescription", and "cta". The structure must be:\n{\n  "description": ["string"],\n  "targetAudience": "string",\n  "faqs": [{ "question": "string", "answer": "string" }],\n  "keyMoments": [{ "label": "string", "summary": "string" }],\n  "metaTitle": "string",\n  "metaDescription": "string",\n  "cta": { "headline": "string", "description": "string" }\n}\n\nBlog Title: "${title}"\n\nContent:\n---\n${content}\n---\n`;
+
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate metadata');
+      }
+
+      const data = await response.json();
+      const parsedData = JSON.parse(data.response);
+
+      const { data: updatedBlog, error } = await supabase
+        .from('blogs')
+        .update(parsedData)
+        .eq('id', blogId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+
+      if (updatedBlog) {
+        setBlogs(prev => prev.map(b => b.id === blogId ? updatedBlog : b));
+        return updatedBlog;
+      } else {
+        throw new Error("Update operation did not return the updated blog post.");
+      }
+    } catch (err) {
+      console.error("Error generating or saving metadata:", err);
+      return null;
+    }
+  }, []);
+
+  return { blogs, fetchBlogs, fetchBlogById, addBlog, updateBlog, deleteBlog, generateBlogMetadata };
 };
