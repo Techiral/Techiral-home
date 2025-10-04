@@ -37,7 +37,10 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
                 },
                 body: JSON.stringify({
                     model: 'openrouter/auto',
-                    messages: updatedMessages.map(m => ({ role: m.role, content: m.text }))
+                    messages: updatedMessages.map(m => ({
+                        role: m.role === 'model' ? 'assistant' : m.role,
+                        content: m.text
+                    }))
                 })
             });
 
