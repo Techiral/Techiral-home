@@ -90,11 +90,7 @@ const BlogDetailPage: React.FC = () => {
             <p style={{ fontSize: '1.125rem', color: 'black', fontWeight: 600, marginBottom: '16px', fontStyle: 'italic' }}>{currentBlog.targetAudience}</p>
             )}
             {Array.isArray(currentBlog.description) ? (
-            <ul style={{ listStyleType: 'disc', listStylePosition: 'inside', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px', fontSize: '1.125rem', maxWidth: 'none', color: 'black' }}>
-                {currentBlog.description.map((item, index) => (
-                <li key={index} dangerouslySetInnerHTML={createMarkup(item)} />
-                ))}
-            </ul>
+                <ContentInsights insights={currentBlog.description.map(d => ({ summary: d }))} />
             ) : (
             <div style={{ fontSize: '1.125rem', maxWidth: 'none', color: 'black' }} dangerouslySetInnerHTML={createMarkup(currentBlog.description)} />
             )}
