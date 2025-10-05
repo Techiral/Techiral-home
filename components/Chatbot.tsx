@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '../types';
@@ -6,9 +7,10 @@ import LoadingSpinner from './LoadingSpinner';
 interface ChatbotProps {
     videoId?: string;
     blogId?: string;
+    knowledgeBase?: string;
 }
 
-const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
+const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId, knowledgeBase }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -41,7 +43,10 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
                     messages: updatedMessages.map(m => ({
                         role: m.role === 'model' ? 'assistant' : m.role,
                         content: m.text
-                    }))
+                    })),
+                    videoId,
+                    blogId,
+                    knowledgeBase,
                 })
             });
 
@@ -112,4 +117,4 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
     );
 };
 
-export default Chatbot;
+export default Chatbot; 

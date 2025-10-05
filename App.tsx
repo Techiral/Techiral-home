@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -10,6 +9,7 @@ import BlogDetailPage from './pages/BlogDetailPage';
 import AdminPage from './pages/AdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import LinksPage from './pages/LinksPage';
+import ListsPage from './pages/ListsPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 
@@ -35,6 +35,7 @@ const MainApp: React.FC = () => {
           <Route path="/blogs" element={<BlogsPage />} />
           <Route path="/blogs/:id" element={<BlogDetailPage />} />
           <Route path="/links" element={<LinksPage />} />
+          <Route path="/lists" element={<ListsPage />} />
           <Route 
             path="/admin" 
             element={user ? <AdminPage /> : <Navigate to="/admin/login" />}

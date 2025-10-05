@@ -126,7 +126,7 @@ const BlogDetailPage: React.FC = () => {
                       </Tab>
                   )}
                   <Tab title="Chat">
-                      <Chatbot blogId={id!} />
+                      <Chatbot blogId={id!} knowledgeBase={currentBlog.content} />
                   </Tab>
               </Tabs>
             </div>

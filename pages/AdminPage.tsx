@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { useVideoData } from '../hooks/useVideoData';
 import { useBlogData } from '../hooks/useBlogData';
-import { useLinkData } from '../hooks/useLinkData'; // Import useLinkData
+import { useLinkData } from '../hooks/useLinkData';
 import { useAuth } from '../hooks/useAuth';
 import type { Video, Blog, FAQItem, ContentInsight, Link } from '../types';
 
-type AdminTab = 'videos' | 'blogs' | 'links'; // Add 'links' to AdminTab
+type AdminTab = 'videos' | 'blogs' | 'links';
 
 const AdminPage: React.FC = () => {
     const { videos, addVideo, updateVideo, deleteVideo } = useVideoData();
     const { blogs, addBlog, updateBlog, deleteBlog } = useBlogData();
-    const { links, addLink, updateLink, deleteLink } = useLinkData(); // Destructure link handlers
+    const { links, addLink, updateLink, deleteLink } = useLinkData();
     const { logout } = useAuth();
     
     const [activeTab, setActiveTab] = useState<AdminTab>('videos');
@@ -103,8 +103,6 @@ const AdminPage: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-
-
     const resetBlogForm = () => {
         setIsEditingBlog(false);
         setBlogFormState(initialBlogFormState);
@@ -173,29 +171,91 @@ const AdminPage: React.FC = () => {
                     <TabButton tab="links">Manage Links</TabButton>
                 </div>
 
-                {/* Video Manager */}
                 {activeTab === 'videos' && (
                     <div className="bg-gray-50 p-4 sm:p-8 rounded-b-lg shadow-md mb-12">
                         <h2 className="font-montserrat text-xl sm:text-2xl font-black">{isEditingVideo ? 'Edit Video' : 'Add New Video'}</h2>
                         {isEditingVideo && <button onClick={resetVideoForm} className="text-sm font-roboto font-bold text-black hover:underline mb-6">&#43; Add New Video</button>}
                         <form onSubmit={handleVideoSubmit} className="space-y-6">
-                            {/* Video form fields... */}
+                            <div>
+                                <label htmlFor="video-id" className="block font-roboto font-bold mb-1">Video ID (YouTube)</label>
+                                <input type="text" id="video-id" name="id" value={videoFormState.id} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                            </div>
+                            <div>
+                                <label htmlFor="video-title" className="block font-roboto font-bold mb-1">Title</label>
+                                <input type="text" id="video-title" name="title" value={videoFormState.title} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                            </div>
+                            <div>
+                                <label htmlFor="video-description" className="block font-roboto font-bold mb-1">Description</label>
+                                <textarea id="video-description" name="description" value={videoFormState.description} onChange={handleVideoInputChange} rows={5} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                            </div>
+                            <div>
+                                <label htmlFor="video-transcript" className="block font-roboto font-bold mb-1">Transcript</label>
+                                <textarea id="video-transcript" name="transcript" value={videoFormState.transcript} onChange={handleVideoInputChange} rows={10} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                            </div>
+                            <div className="border-t-2 border-gray-200 pt-6">
+                                <h3 className="font-montserrat text-lg font-black mb-4">SEO</h3>
+                                <div>
+                                    <label htmlFor="video-metaTitle" className="block font-roboto font-bold mb-1">Meta Title</label>
+                                    <input type="text" id="video-metaTitle" name="metaTitle" value={videoFormState.metaTitle} onChange={handleVideoInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                </div>
+                                <div className="mt-4">
+                                    <label htmlFor="video-metaDescription" className="block font-roboto font-bold mb-1">Meta Description</label>
+                                    <textarea id="video-metaDescription" name="metaDescription" value={videoFormState.metaDescription} onChange={handleVideoInputChange} rows={3} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                </div>
+                            </div>
+                            <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md" disabled={isSubmitting}>
+                                {isSubmitting ? 'Saving...' : (isEditingVideo ? 'Save Changes' : 'Add Video')}
+                            </button>
                         </form>
                     </div>
                 )}
                 
-                {/* Blog Manager */}
                 {activeTab === 'blogs' && (
                      <div className="bg-gray-50 p-4 sm:p-8 rounded-b-lg shadow-md mb-12">
                         <h2 className="font-montserrat text-xl sm:text-2xl font-black">{isEditingBlog ? 'Edit Blog' : 'Add New Blog'}</h2>
                         {isEditingBlog && <button onClick={resetBlogForm} className="text-sm font-roboto font-bold text-black hover:underline mb-6">&#43; Add New Blog</button>}
                         <form onSubmit={handleBlogSubmit} className="space-y-6">
-                             {/* Blog form fields... */}
+                            {!isEditingBlog && (
+                                <div>
+                                    <label htmlFor="blog-mediumUrl" className="block font-roboto font-bold mb-1">Medium URL</label>
+                                    <input type="text" id="blog-mediumUrl" name="mediumUrl" value={blogFormState.mediumUrl} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                    <p className="text-sm text-gray-500 mt-1">Fill this to fetch content from Medium.</p>
+                                </div>
+                            )}
+                            <div>
+                                <label htmlFor="blog-title" className="block font-roboto font-bold mb-1">Title</label>
+                                <input type="text" id="blog-title" name="title" value={blogFormState.title} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" required />
+                            </div>
+                            <div>
+                                <label htmlFor="blog-description" className="block font-roboto font-bold mb-1">Description</label>
+                                <textarea id="blog-description" name="description" value={blogFormState.description} onChange={handleBlogInputChange} rows={5} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                            </div>
+                            <div>
+                                <label htmlFor="blog-content" className="block font-roboto font-bold mb-1">Content (HTML)</label>
+                                <textarea id="blog-content" name="content" value={blogFormState.content} onChange={handleBlogInputChange} rows={15} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                            </div>
+                             <div>
+                                <label htmlFor="blog-thumbnailUrl" className="block font-roboto font-bold mb-1">Thumbnail URL</label>
+                                <input type="text" id="blog-thumbnailUrl" name="thumbnailUrl" value={blogFormState.thumbnailUrl} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                            </div>
+                            <div className="border-t-2 border-gray-200 pt-6">
+                                <h3 className="font-montserrat text-lg font-black mb-4">SEO</h3>
+                                <div>
+                                    <label htmlFor="blog-metaTitle" className="block font-roboto font-bold mb-1">Meta Title</label>
+                                    <input type="text" id="blog-metaTitle" name="metaTitle" value={blogFormState.metaTitle} onChange={handleBlogInputChange} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                </div>
+                                <div className="mt-4">
+                                    <label htmlFor="blog-metaDescription" className="block font-roboto font-bold mb-1">Meta Description</label>
+                                    <textarea id="blog-metaDescription" name="metaDescription" value={blogFormState.metaDescription} onChange={handleBlogInputChange} rows={3} className="w-full p-2 border-2 border-gray-300 rounded-md" />
+                                </div>
+                            </div>
+                            <button type="submit" className="bg-black text-white font-roboto font-bold py-3 px-6 rounded-md" disabled={isSubmitting}>
+                                {isSubmitting ? 'Saving...' : (isEditingBlog ? 'Save Changes' : 'Add Blog')}
+                            </button>
                         </form>
                     </div>
                 )}
 
-                {/* Link Manager */}
                 {activeTab === 'links' && (
                     <div className="bg-gray-50 p-4 sm:p-8 rounded-b-lg shadow-md mb-12">
                         <div className="flex justify-between items-center mb-6">
@@ -226,8 +286,6 @@ const AdminPage: React.FC = () => {
                     </div>
                 )}
 
-
-                {/* Lists of Existing Content */}
                 <div>
                      {activeTab === 'videos' && (
                         <div>

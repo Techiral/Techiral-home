@@ -91,7 +91,7 @@ const VideoDetailPage: React.FC = () => {
                         </Tab>
                     )}
                     <Tab title="Chat">
-                        <Chatbot videoId={id!} />
+                        <Chatbot videoId={id!} knowledgeBase={currentVideo.transcript} />
                     </Tab>
                 </Tabs>
             </div>
