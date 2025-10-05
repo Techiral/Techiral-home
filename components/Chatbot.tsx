@@ -73,7 +73,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-xs md:max-w-md rounded-lg px-4 py-2 ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800'}`}>
+                        <div className={`max-w-xs md:max-w-md rounded-lg px-4 py-2 ${msg.role === 'user' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
                             <div className="text-sm font-roboto whitespace-pre-wrap">
                                 <ReactMarkdown>{msg.text}</ReactMarkdown>
                             </div>
@@ -96,12 +96,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ videoId, blogId }) => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder={`Ask anything...`}
-                        className="flex-1 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-roboto"
+                        className="flex-1 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 font-roboto"
                         disabled={isLoading}
                     />
                     <button
                         type="submit"
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-md disabled:bg-indigo-300 font-roboto font-bold hover:bg-indigo-700 transition-colors"
+                        className="bg-gray-800 text-white px-4 py-2 rounded-md disabled:bg-gray-400 font-roboto font-bold hover:bg-gray-700 transition-colors"
                         disabled={isLoading || !input.trim()}
                     >
                         Send

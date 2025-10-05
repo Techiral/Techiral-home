@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBlogData } from '../hooks/useBlogData';
 import Chatbot from '../components/Chatbot';
@@ -10,20 +10,32 @@ import Tabs, { Tab } from '../components/Tabs';
 
 const BlogDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { blogs, loading, generateBlogMetadata } = useBlogData();
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { blogs, loading } = useBlogData();
+  const [summary, setSummary] = useState('');
+  const [isSummarizing, setIsSummarizing] = useState(true);
+  const [showFullContent, setShowFullContent] = useState(false);
   const currentBlog = blogs.find(b => b.id === id);
 
-  const handleGenerateMetadata = async () => {
-    if (currentBlog) {
-      setIsGenerating(true);
-      try {
-        await generateBlogMetadata(currentBlog.id, currentBlog.title, currentBlog.content);
-      } finally {
-        setIsGenerating(false);
-      }
+  const handleSummarize = async () => {
+    if(currentBlog) {
+      setIsSummarizing(true);
+      // MOCK: In a real app, you'd call an AI summarization service.
+      // Simulating a network request delay.
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const summaryText = Array.isArray(currentBlog.description)
+        ? currentBlog.description.map(d => `<p>${d}</p>`).join('')
+        : currentBlog.description;
+      setSummary(summaryText || (currentBlog.content.substring(0, 500) + '...'));
+      setIsSummarizing(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (currentBlog) {
+      handleSummarize();
+    }
+  }, [currentBlog]);
+
 
   if (loading) {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LoadingSpinner /></div>;
@@ -89,16 +101,24 @@ const BlogDetailPage: React.FC = () => {
             {currentBlog.targetAudience && (
             <p style={{ fontSize: '1.125rem', color: 'black', fontWeight: 600, marginBottom: '16px', fontStyle: 'italic' }}>{currentBlog.targetAudience}</p>
             )}
-            {Array.isArray(currentBlog.description) ? (
-                <ContentInsights insights={currentBlog.description.map(d => ({ summary: d }))} />
-            ) : (
-            <div style={{ fontSize: '1.125rem', maxWidth: 'none', color: 'black' }} dangerouslySetInnerHTML={createMarkup(currentBlog.description)} />
-            )}
-            <div style={{ fontSize: '1.125rem', maxWidth: 'none', color: 'black', marginTop: '32px' }} dangerouslySetInnerHTML={createMarkup(currentBlog.content)} />
-            <div style={{ marginTop: '48px' }}>
-              <button onClick={handleGenerateMetadata} disabled={isGenerating} style={{ marginBottom: '24px', padding: '12px 24px', backgroundColor: isGenerating ? '#ccc' : '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 }}>
-                {isGenerating ? 'Generating...' : 'Generate Blog Metadata'}
+            
+            <div style={{ fontSize: '1.125rem', maxWidth: 'none', color: 'black', marginTop: '32px' }}>
+              {isSummarizing ? (
+                <LoadingSpinner />
+              ) : showFullContent ? (
+                <div dangerouslySetInnerHTML={createMarkup(currentBlog.content)} />
+              ) : (
+                <div dangerouslySetInnerHTML={createMarkup(summary)} />
+              )}
+            </div>
+
+            {!isSummarizing && (
+              <button onClick={() => setShowFullContent(!showFullContent)} style={{ marginTop: '24px', padding: '12px 24px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 }}>
+                {showFullContent ? 'Show Summary' : 'Read More'}
               </button>
+            )}
+
+            <div style={{ marginTop: '48px' }}>
               <Tabs>
                   {currentBlog.faqs && currentBlog.faqs.length > 0 && (
                       <Tab title="FAQ">

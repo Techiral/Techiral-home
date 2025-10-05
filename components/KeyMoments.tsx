@@ -16,7 +16,7 @@ const KeyMoments: React.FC<KeyMomentsProps> = ({ moments }) => {
       <div className="space-y-3">
         {moments.map((moment, index) => (
           <div key={index} className="flex items-start p-3 rounded-lg hover:bg-gray-100 transition-colors">
-            <div className="flex-shrink-0 text-indigo-600 font-semibold w-24 text-right mr-4">
+            <div className="flex-shrink-0 text-gray-800 font-semibold w-24 text-right mr-4">
               {moment.label}
             </div>
             <div className="text-gray-800 font-roboto">

@@ -9,6 +9,7 @@ import BlogsPage from './pages/BlogsPage';
 import BlogDetailPage from './pages/BlogDetailPage';
 import AdminPage from './pages/AdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
+import LinksPage from './pages/LinksPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 
@@ -33,6 +34,7 @@ const MainApp: React.FC = () => {
           <Route path="/videos/:id" element={<VideoDetailPage />} />
           <Route path="/blogs" element={<BlogsPage />} />
           <Route path="/blogs/:id" element={<BlogDetailPage />} />
+          <Route path="/links" element={<LinksPage />} />
           <Route 
             path="/admin" 
             element={user ? <AdminPage /> : <Navigate to="/admin/login" />}
